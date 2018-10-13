@@ -1,0 +1,8 @@
+[package]
+name = "naskah"
+version = "0.1.0"
+authors = ["Fatih Kalifa <fatihkalifa@gmail.com>"]
+
+[dependencies]
+nom = "4.1.0"
+byteorder = "1.2.6"
