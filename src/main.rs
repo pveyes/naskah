@@ -1,6 +1,7 @@
 #[macro_use]
 extern crate nom;
-extern crate byteorder;
+extern crate lazy_static;
+extern crate regex;
 
 mod ast;
 mod parser;
