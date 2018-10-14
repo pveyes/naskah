@@ -63,7 +63,7 @@ mod test {
   #[test]
   fn cannot_start_with_number() {
     assert_ne!(
-      identifier(&b"xx"[..]),
+      identifier(&b"2x"[..]),
       Ok((
         &b""[..],
         Identifier {

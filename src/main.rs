@@ -11,24 +11,17 @@ use ast::LiteralValue;
 use ast::Program;
 use ast::ProgramBody;
 use ast::VariableDeclaration;
+use parser::parse;
 
 fn main() {
-    // let d1 = parser.parse("misal x = 1");
+    let d1 = parse("misal x = 1 ;").unwrap();
 
-    // var x = 1
-    let d1 = VariableDeclaration {
-        id: Identifier {
-            name: String::from("x"),
-        },
-        value: LiteralValue::Number(1),
-    };
-
-    // var x = 2;
+    // var x = 1;
     let d2 = VariableDeclaration {
         id: Identifier {
             name: String::from("x"),
         },
-        value: LiteralValue::Number(2),
+        value: LiteralValue::Number(1),
     };
 
     let pg1 = Program {

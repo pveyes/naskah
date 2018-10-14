@@ -3,5 +3,10 @@ mod identifier;
 mod number;
 mod variable;
 
-#[allow(dead_code)]
-pub fn parse(_input: &str) -> () {}
+use ast::VariableDeclaration;
+use nom;
+
+pub fn parse(input: &str) -> Result<VariableDeclaration, nom::Err<&[u8]>> {
+  let (_, decl) = variable::variable(input.as_bytes())?;
+  Ok(decl)
+}
