@@ -12,7 +12,7 @@ named!(
 );
 
 named!(
-  variable<VariableDeclaration>,
+  pub variable<VariableDeclaration>,
   do_parse!(
     tag!("misal")
       >> id: map_res!(ws!(take_until!("=")), identifier)
