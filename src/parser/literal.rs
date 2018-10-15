@@ -1,24 +1,21 @@
 use super::boolean::boolean_literal;
 use super::number::number_literal;
-use ast::LiteralValue;
+use ast::Literal;
 use std::str;
 
-named!(
-  null<LiteralValue>,
-  map!(tag!("kosong"), |_| LiteralValue::Null)
-);
+named!(null<Literal>, map!(tag!("kosong"), |_| Literal::Null));
 
 named!(
-  string_literal<LiteralValue>,
+  string_literal<Literal>,
   do_parse!(
     tag!("\"")
       >> s: map_res!(take_until!("\""), str::from_utf8)
-      >> (LiteralValue::String(String::from(s)))
+      >> (Literal::String(String::from(s)))
   )
 );
 
 named!(
-  pub literal<LiteralValue>,
+  pub literal<Literal>,
   alt_complete!(boolean_literal | number_literal | string_literal | null)
 );
 
@@ -29,12 +26,12 @@ mod test {
   fn boolean() {
     assert_eq!(
       literal(&b"benar"[..]),
-      Ok((&b""[..], LiteralValue::Boolean(true)))
+      Ok((&b""[..], Literal::Boolean(true)))
     );
 
     assert_eq!(
       literal(&b"salah"[..]),
-      Ok((&b""[..], LiteralValue::Boolean(false)))
+      Ok((&b""[..], Literal::Boolean(false)))
     );
   }
 
@@ -42,20 +39,17 @@ mod test {
   fn string() {
     assert_eq!(
       literal(&b"\"p23u08rfwi\""[..]),
-      Ok((&b"\""[..], LiteralValue::String(String::from("p23u08rfwi"))))
+      Ok((&b"\""[..], Literal::String(String::from("p23u08rfwi"))))
     );
   }
 
   #[test]
   fn number() {
-    assert_eq!(
-      literal(&b"2 "[..]),
-      Ok((&b" "[..], LiteralValue::Number(2)))
-    );
+    assert_eq!(literal(&b"2 "[..]), Ok((&b" "[..], Literal::Number(2))));
   }
 
   #[test]
   fn null() {
-    assert_eq!(literal(&b"kosong"[..]), Ok((&b""[..], LiteralValue::Null)));
+    assert_eq!(literal(&b"kosong"[..]), Ok((&b""[..], Literal::Null)));
   }
 }

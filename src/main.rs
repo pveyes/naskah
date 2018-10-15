@@ -7,10 +7,11 @@ mod ast;
 mod parser;
 
 use ast::Identifier;
-use ast::LiteralValue;
+use ast::Literal;
 use ast::Program;
 use ast::ProgramBody;
 use ast::VariableDeclaration;
+use ast::VariableValue;
 use parser::parse;
 
 fn main() {
@@ -21,7 +22,7 @@ fn main() {
         id: Identifier {
             name: String::from("x"),
         },
-        value: LiteralValue::Number(1),
+        value: VariableValue::Literal(Literal::Number(1)),
     };
 
     let pg1 = Program {
