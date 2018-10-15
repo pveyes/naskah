@@ -53,10 +53,16 @@ pub struct VariableDeclaration {
 // }
 
 #[derive(PartialEq, Debug)]
+pub struct BlockStatement {
+    pub body: Vec<Statement>,
+}
+
+#[derive(PartialEq, Debug)]
 pub enum Statement {
     VariableDeclaration(VariableDeclaration),
-    BlockStatement(Vec<Statement>),
+    BlockStatement(BlockStatement),
     Empty,
+    Loop(BlockStatement),
     // IFStatement(IFStatement)
     // LoopStatement(LoopStatement)
 }
