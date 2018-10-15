@@ -10,7 +10,7 @@ use ast::Expression;
 use ast::Identifier;
 use ast::Literal;
 use ast::Program;
-use ast::ProgramBody;
+use ast::Statement;
 use ast::VariableDeclaration;
 use parser::parse;
 
@@ -26,10 +26,10 @@ fn main() {
     };
 
     let pg1 = Program {
-        body: vec![ProgramBody::VariableDeclaration(d1)],
+        body: vec![Statement::VariableDeclaration(d1)],
     };
     let pg2 = Program {
-        body: vec![ProgramBody::VariableDeclaration(d2)],
+        body: vec![Statement::VariableDeclaration(d2)],
     };
     assert_eq!(pg1, pg2);
 }

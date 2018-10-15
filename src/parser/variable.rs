@@ -3,7 +3,7 @@ use super::identifier::identifier;
 use ast::VariableDeclaration;
 
 named!(
-  pub variable<VariableDeclaration>,
+  pub variable_declaration<VariableDeclaration>,
   do_parse!(
     tag!("misal")
       >> id: ws!(identifier)
@@ -28,7 +28,7 @@ mod test {
     #[test]
     fn boolean_assignment() {
         assert_eq!(
-            variable(&b"misal x = benar;z"[..]),
+            variable_declaration(&b"misal x = benar;z"[..]),
             Ok((
                 &b"z"[..],
                 VariableDeclaration {
@@ -44,7 +44,7 @@ mod test {
     #[test]
     fn string_assignment() {
         assert_eq!(
-            variable(&b"misal x = \"str\";rest"[..]),
+            variable_declaration(&b"misal x = \"str\";rest"[..]),
             Ok((
                 &b"rest"[..],
                 VariableDeclaration {
@@ -60,7 +60,7 @@ mod test {
     #[test]
     fn number_assignment() {
         assert_eq!(
-            variable(&b"misal x = 5;rest"[..]),
+            variable_declaration(&b"misal x = 5;rest"[..]),
             Ok((
                 &b"rest"[..],
                 VariableDeclaration {
@@ -76,7 +76,7 @@ mod test {
     #[test]
     fn null_assignment() {
         assert_eq!(
-            variable(&b"misal x = kosong;rest"[..]),
+            variable_declaration(&b"misal x = kosong;rest"[..]),
             Ok((
                 &b"rest"[..],
                 VariableDeclaration {
@@ -92,7 +92,7 @@ mod test {
     #[test]
     fn identifier_assignment() {
         assert_eq!(
-            variable(&b"misal x = a;rest"[..]),
+            variable_declaration(&b"misal x = a;rest"[..]),
             Ok((
                 &b"rest"[..],
                 VariableDeclaration {
@@ -110,7 +110,7 @@ mod test {
     #[test]
     fn binary_expression_assignment() {
         assert_eq!(
-            variable(&b"misal sum = 2 + 3;rest"[..]),
+            variable_declaration(&b"misal sum = 2 + 3;rest"[..]),
             Ok((
                 &b"rest"[..],
                 VariableDeclaration {
