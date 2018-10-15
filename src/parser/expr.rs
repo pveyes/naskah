@@ -15,10 +15,8 @@ named!(
   pub expression<Expression>,
   do_parse!(
     expr: alt_complete!(
-      map!(single_binary_expression, |e| Expression::BinaryExpression(Box::new(e))) |
-      // TODO recursive binary expression
-     // map!(binary_expression, |e| Expression::BinaryExpression(Box::new(e))) |
-     simple_expression
+        binary_expression |
+        simple_expression
     ) >> tag!(";") >> (expr)
   )
 );
@@ -36,16 +34,21 @@ named!(
 );
 
 named!(
-    binary_expression<BinaryExpression>,
+    binary_expression<Expression>,
     do_parse!(
-        v1: expression
-            >> op: operator
-            >> v2: expression
-            >> (BinaryExpression {
-                left: v1,
-                right: v2,
-                operator: op,
-            })
+        first: simple_expression
+            >> fold: fold_many0!(
+                do_parse!(op: operator >> expr: simple_expression >> (op, expr)),
+                first,
+                |expr1: Expression, (op, expr2): (Operator, Expression)| {
+                    Expression::BinaryExpression(Box::new(BinaryExpression {
+                        left: expr1,
+                        right: expr2,
+                        operator: op,
+                    }))
+                }
+            )
+            >> (fold)
     )
 );
 
@@ -127,5 +130,24 @@ mod test {
                 }))
             ))
         )
+    }
+
+    #[test]
+    fn recursive_binary_expression() {
+        assert_eq!(
+            binary_expression(&b"1 > 2 + 3;"[..]),
+            Ok((
+                &b";"[..],
+                Expression::BinaryExpression(Box::new(BinaryExpression {
+                    left: Expression::BinaryExpression(Box::new(BinaryExpression {
+                        left: Expression::Literal(Literal::Number(1)),
+                        right: Expression::Literal(Literal::Number(2)),
+                        operator: Operator::GreaterThan,
+                    })),
+                    right: Expression::Literal(Literal::Number(3)),
+                    operator: Operator::Plus,
+                }))
+            ))
+        );
     }
 }
