@@ -1,4 +1,4 @@
-use ast::LiteralValue;
+use ast::Literal;
 
 named!(
   boolean<bool>,
@@ -6,8 +6,8 @@ named!(
 );
 
 named!(
-  pub boolean_literal<LiteralValue>,
-  map!(boolean, |b| LiteralValue::Boolean(b))
+  pub boolean_literal<Literal>,
+  map!(boolean, |b| Literal::Boolean(b))
 );
 
 #[cfg(test)]
@@ -24,11 +24,11 @@ mod test {
   fn test_boolean_literal() {
     assert_eq!(
       boolean_literal(&b"benar"[..]),
-      Ok((&b""[..], LiteralValue::Boolean(true)))
+      Ok((&b""[..], Literal::Boolean(true)))
     );
     assert_eq!(
       boolean_literal(&b"salah"[..]),
-      Ok((&b""[..], LiteralValue::Boolean(false)))
+      Ok((&b""[..], Literal::Boolean(false)))
     );
   }
 }

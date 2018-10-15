@@ -3,8 +3,17 @@ use super::literal::literal;
 #[cfg(test)]
 use ast::Identifier;
 #[cfg(test)]
-use ast::LiteralValue;
+use ast::Literal;
 use ast::VariableDeclaration;
+use ast::VariableValue;
+
+named!(
+  variable_value<VariableValue>,
+  alt_complete!(
+    map!(literal, |l| VariableValue::Literal(l))
+      | map!(identifier, |i| VariableValue::Identifier(i))
+  )
+);
 
 named!(
   pub variable<VariableDeclaration>,
@@ -12,7 +21,7 @@ named!(
     tag!("misal")
       >> id: map_res!(ws!(take_until!("=")), identifier)
       >> tag!("=")
-      >> expr: map_res!(ws!(take_until!(";")), literal)
+      >> expr: map_res!(ws!(take_until!(";")), variable_value)
       >> tag!(";")
       >> (VariableDeclaration {
         id: id.1,
@@ -35,7 +44,7 @@ mod test {
           id: Identifier {
             name: String::from("x")
           },
-          value: LiteralValue::Boolean(true),
+          value: VariableValue::Literal(Literal::Boolean(true)),
         }
       ))
     );
@@ -51,7 +60,7 @@ mod test {
           id: Identifier {
             name: String::from("x")
           },
-          value: LiteralValue::String(String::from("str")),
+          value: VariableValue::Literal(Literal::String(String::from("str"))),
         }
       ))
     );
@@ -68,7 +77,7 @@ mod test {
           id: Identifier {
             name: String::from("x")
           },
-          value: LiteralValue::Number(5),
+          value: VariableValue::Literal(Literal::Number(5)),
         }
       ))
     );
@@ -84,7 +93,25 @@ mod test {
           id: Identifier {
             name: String::from("x")
           },
-          value: LiteralValue::Null,
+          value: VariableValue::Literal(Literal::Null),
+        }
+      ))
+    );
+  }
+
+  #[test]
+  fn identifier_assignment() {
+    assert_eq!(
+      variable(&b"misal x = a;"[..]),
+      Ok((
+        &b""[..],
+        VariableDeclaration {
+          id: Identifier {
+            name: String::from("x")
+          },
+          value: VariableValue::Identifier(Identifier {
+            name: String::from("a")
+          }),
         }
       ))
     );

@@ -1,5 +1,5 @@
 #[derive(PartialEq, Debug)]
-pub enum LiteralValue {
+pub enum Literal {
   Number(i64),
   Null,
   String(String),
@@ -12,9 +12,15 @@ pub struct Identifier {
 }
 
 #[derive(PartialEq, Debug)]
+pub enum VariableValue {
+  Identifier(Identifier),
+  Literal(Literal),
+}
+
+#[derive(PartialEq, Debug)]
 pub struct VariableDeclaration {
   pub id: Identifier,
-  pub value: LiteralValue,
+  pub value: VariableValue,
 }
 
 // #[derive(PartialEq, Debug)]

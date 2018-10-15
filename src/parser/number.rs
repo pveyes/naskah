@@ -1,4 +1,4 @@
-use ast::LiteralValue;
+use ast::Literal;
 use nom::{is_digit, is_hex_digit};
 use std::i64;
 use std::str;
@@ -54,8 +54,8 @@ named!(
 );
 
 named!(
-  pub number_literal<LiteralValue>,
-  map!(integer, |d| LiteralValue::Number(d))
+  pub number_literal<Literal>,
+  map!(integer, |d| Literal::Number(d))
 );
 
 #[cfg(test)]
@@ -115,7 +115,7 @@ mod test {
   fn test_number_literal() {
     assert_eq!(
       number_literal(&b"2 "[..]),
-      Ok((&b" "[..], LiteralValue::Number(2)))
+      Ok((&b" "[..], Literal::Number(2)))
     )
   }
 }
