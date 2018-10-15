@@ -52,20 +52,6 @@ named!(
     )
 );
 
-named!(
-    single_binary_expression<BinaryExpression>,
-    do_parse!(
-        v1: simple_expression
-            >> op: operator
-            >> v2: simple_expression
-            >> (BinaryExpression {
-                left: v1,
-                right: v2,
-                operator: op,
-            })
-    )
-);
-
 #[cfg(test)]
 mod test {
     use super::*;
@@ -86,31 +72,14 @@ mod test {
 
     fn binary_expression_literals() {
         assert_eq!(
-            single_binary_expression(&b"\"kosong\" != kosong;"[..]),
+            expression(&b"\"kosong\" != kosong;"[..]),
             Ok((
-                &b";"[..],
-                BinaryExpression {
+                &b""[..],
+                Expression::BinaryExpression(Box::new(BinaryExpression {
                     left: Expression::Literal(Literal::String(String::from("kosong"))),
                     right: Expression::Literal(Literal::Null),
                     operator: Operator::NotEqual
-                }
-            ))
-        )
-    }
-
-    #[test]
-    fn binary_expression_literal_id() {
-        assert_eq!(
-            single_binary_expression(&b"x > 5;"[..]),
-            Ok((
-                &b";"[..],
-                BinaryExpression {
-                    left: Expression::Identifier(Identifier {
-                        name: String::from("x")
-                    }),
-                    right: Expression::Literal(Literal::Number(5)),
-                    operator: Operator::GreaterThan
-                }
+                }))
             ))
         )
     }
@@ -135,9 +104,9 @@ mod test {
     #[test]
     fn recursive_binary_expression() {
         assert_eq!(
-            binary_expression(&b"1 > 2 + 3;"[..]),
+            expression(&b"1 > 2 + 3;"[..]),
             Ok((
-                &b";"[..],
+                &b""[..],
                 Expression::BinaryExpression(Box::new(BinaryExpression {
                     left: Expression::BinaryExpression(Box::new(BinaryExpression {
                         left: Expression::Literal(Literal::Number(1)),
