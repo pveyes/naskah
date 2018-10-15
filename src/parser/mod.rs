@@ -1,5 +1,6 @@
 mod boolean;
 mod identifier;
+mod literal;
 mod number;
 mod variable;
 

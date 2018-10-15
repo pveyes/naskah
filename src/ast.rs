@@ -1,9 +1,8 @@
 #[derive(PartialEq, Debug)]
 pub enum LiteralValue {
   Number(i64),
-  #[allow(dead_code)]
+  Null,
   String(String),
-  #[allow(dead_code)]
   Boolean(bool),
 }
 
