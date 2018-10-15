@@ -10,6 +10,7 @@ named!(
   do_parse!(
     tag!("\"")
       >> s: map_res!(take_until!("\""), str::from_utf8)
+      >> tag!("\"")
       >> (Literal::String(String::from(s)))
   )
 );
@@ -39,7 +40,7 @@ mod test {
   fn string() {
     assert_eq!(
       literal(&b"\"p23u08rfwi\""[..]),
-      Ok((&b"\""[..], Literal::String(String::from("p23u08rfwi"))))
+      Ok((&b""[..], Literal::String(String::from("p23u08rfwi"))))
     );
   }
 
