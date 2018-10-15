@@ -1,11 +1,13 @@
 use super::variable::variable_declaration;
+use ast::BlockStatement;
 use ast::Statement;
 
 named!(
     statement<Statement>,
     alt_complete!(
         map!(variable_declaration, |v| Statement::VariableDeclaration(v))
-            | block_statement
+            | map!(block_statement, |b| Statement::BlockStatement(b))
+            | loop_statement
             | empty_statement
     )
 );
@@ -16,11 +18,16 @@ named!(
 );
 
 named!(
-    block_statement<Statement>,
+    block_statement<BlockStatement>,
     map!(
         do_parse!(tag!("{") >> s: many1!(ws!(statement)) >> tag!("}") >> (s)),
-        Statement::BlockStatement
+        |s| BlockStatement { body: s }
     )
+);
+
+named!(
+    loop_statement<Statement>,
+    do_parse!(ws!(tag!("loop")) >> s: block_statement >> (Statement::Loop(s)))
 );
 
 #[cfg(test)]
@@ -36,25 +43,30 @@ mod test {
     #[test]
     fn empty_block() {
         assert_eq!(
-            block_statement(&b"{\n}"[..]),
-            Ok((&b""[..], Statement::BlockStatement(vec![Statement::Empty])))
+            statement(&b"{\n}"[..]),
+            Ok((
+                &b""[..],
+                Statement::BlockStatement(BlockStatement {
+                    body: vec![Statement::Empty]
+                })
+            ))
         );
     }
 
     #[test]
     fn var_decl_inside_block() {
         assert_eq!(
-            block_statement(&b"{\nmisal x = 5;\n}"[..]),
+            statement(&b"{\nmisal x = 5;\n}"[..]),
             Ok((
                 &b""[..],
-                Statement::BlockStatement(vec![Statement::VariableDeclaration(
-                    VariableDeclaration {
+                Statement::BlockStatement(BlockStatement {
+                    body: vec![Statement::VariableDeclaration(VariableDeclaration {
                         id: Identifier {
                             name: String::from("x")
                         },
                         value: Expression::Literal(Literal::Number(5))
-                    }
-                )])
+                    })]
+                })
             ))
         );
     }
@@ -62,10 +74,32 @@ mod test {
     #[test]
     fn recursive_empty_block() {
         assert_eq!(
-            block_statement(&b"{\n{\n}\n}"[..]),
+            statement(&b"{\n{\n}\n}"[..]),
             Ok((
                 &b""[..],
-                Statement::BlockStatement(vec![Statement::BlockStatement(vec![Statement::Empty])])
+                Statement::BlockStatement(BlockStatement {
+                    body: vec![Statement::BlockStatement(BlockStatement {
+                        body: vec![Statement::Empty]
+                    })]
+                })
+            ))
+        );
+    }
+
+    #[test]
+    fn test_loop_statement() {
+        assert_eq!(
+            statement(&b"loop {\nmisal y = kosong;\n}"[..]),
+            Ok((
+                &b""[..],
+                Statement::Loop(BlockStatement {
+                    body: vec![Statement::VariableDeclaration(VariableDeclaration {
+                        id: Identifier {
+                            name: String::from("y")
+                        },
+                        value: Expression::Literal(Literal::Null)
+                    })]
+                })
             ))
         );
     }
