@@ -17,9 +17,9 @@ mod test {
   #[test]
   fn alphanumeric() {
     assert_eq!(
-      identifier(&b"x"[..]),
+      identifier(&b"x;"[..]),
       Ok((
-        &b""[..],
+        &b";"[..],
         Identifier {
           name: String::from("x")
         }
