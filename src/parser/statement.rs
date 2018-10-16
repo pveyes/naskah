@@ -1,4 +1,6 @@
 use super::expr::expression;
+use super::identifier::identifier;
+use super::literal::{boolean_literal, null_literal};
 use super::variable::variable_declaration;
 use ast::*;
 
@@ -32,10 +34,23 @@ named!(
 );
 
 named!(
+    special_if_condition<Expression>,
+    do_parse!(
+        left: identifier
+            >> right: ws!(alt!(boolean_literal | null_literal))
+            >> (Expression::BinaryExpression(Box::new(BinaryExpression {
+                left: Expression::Identifier(left),
+                right: Expression::Literal(right),
+                operator: Operator::Equal
+            })))
+    )
+);
+
+named!(
     if_statement<Statement>,
     do_parse!(
         ws!(tag!("jika"))
-            >> expr: expression
+            >> expr: alt!(special_if_condition | expression)
             >> s: block_statement
             >> (Statement::IfStatement(IfStatement {
                 test: expr,
@@ -141,6 +156,24 @@ mod test {
                     }
                 })
             ))
+        );
+    }
+
+    #[test]
+    fn special_if_statement() {
+        assert_eq!(
+            statement(&b"jika a kosong {\n}"[..]),
+            statement(&b"jika a == kosong {\n}"[..])
+        );
+
+        assert_eq!(
+            statement(&b"jika a benar {\n}"[..]),
+            statement(&b"jika a == benar {\n}"[..])
+        );
+
+        assert_eq!(
+            statement(&b"jika a salah {\n}"[..]),
+            statement(&b"jika a == salah {\n}"[..])
         );
     }
 }
