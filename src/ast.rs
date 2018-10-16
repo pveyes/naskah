@@ -49,22 +49,27 @@ pub struct VariableDeclaration {
 }
 
 #[derive(PartialEq, Debug)]
+pub enum AlternateStatement {
+    IfStatement(Box<Statement>),
+    BlockStatement(BlockStatement),
+}
+
+#[derive(PartialEq, Debug)]
 pub struct IfStatement {
     pub test: Expression,
     pub consequent: BlockStatement,
-    // TODO alternate: Option(AlternateStatement)
+    pub alternate: Option<AlternateStatement>,
 }
 
 #[derive(PartialEq, Debug)]
 pub struct BlockStatement {
-    pub body: Vec<Statement>,
+    pub body: Option<Vec<Statement>>,
 }
 
 #[derive(PartialEq, Debug)]
 pub enum Statement {
     VariableDeclaration(VariableDeclaration),
     BlockStatement(BlockStatement),
-    Empty,
     Loop(BlockStatement),
     IfStatement(IfStatement),
 }
