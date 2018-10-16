@@ -1,9 +1,18 @@
-use super::boolean::boolean_literal;
 use super::number::number_literal;
 use ast::Literal;
 use std::str;
 
-named!(null<Literal>, map!(tag!("kosong"), |_| Literal::Null));
+named!(
+    boolean<bool>,
+    alt!(map!(tag!("benar"), |_| true) | map!(tag!("salah"), |_| false))
+);
+
+named!(
+  pub boolean_literal<Literal>,
+  map!(boolean, |b| Literal::Boolean(b))
+);
+
+named!(pub null_literal<Literal>, map!(tag!("kosong"), |_| Literal::Null));
 
 named!(
     string_literal<Literal>,
@@ -17,7 +26,7 @@ named!(
 
 named!(
   pub literal<Literal>,
-  alt_complete!(boolean_literal | number_literal | string_literal | null)
+  alt_complete!(boolean_literal | number_literal | string_literal | null_literal)
 );
 
 #[cfg(test)]

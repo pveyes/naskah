@@ -1,4 +1,3 @@
-mod boolean;
 mod expr;
 mod identifier;
 mod literal;
