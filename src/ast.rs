@@ -41,16 +41,12 @@ pub struct VariableDeclaration {
     pub value: Expression,
 }
 
-// #[derive(PartialEq, Debug)]
-// pub enum Operand {
-//   Identifier(Identifier),
-//   Literal(LiteralValue),
-// }
-
-// #[derive(PartialEq, Debug)]
-// pub struct IFStatement {
-//   pub test: BinaryExpression,
-// }
+#[derive(PartialEq, Debug)]
+pub struct IfStatement {
+    pub test: Expression,
+    pub consequent: BlockStatement,
+    // TODO alternate: Option(AlternateStatement)
+}
 
 #[derive(PartialEq, Debug)]
 pub struct BlockStatement {
@@ -63,8 +59,7 @@ pub enum Statement {
     BlockStatement(BlockStatement),
     Empty,
     Loop(BlockStatement),
-    // IFStatement(IFStatement)
-    // LoopStatement(LoopStatement)
+    IfStatement(IfStatement),
 }
 
 #[derive(PartialEq, Debug)]

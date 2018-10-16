@@ -17,7 +17,7 @@ named!(
     expr: alt_complete!(
         binary_expression |
         simple_expression
-    ) >> tag!(";") >> (expr)
+    ) >> (expr)
   )
 );
 
@@ -74,7 +74,7 @@ mod test {
         assert_eq!(
             expression(&b"\"kosong\" != kosong;"[..]),
             Ok((
-                &b""[..],
+                &b";"[..],
                 Expression::BinaryExpression(Box::new(BinaryExpression {
                     left: Expression::Literal(Literal::String(String::from("kosong"))),
                     right: Expression::Literal(Literal::Null),
@@ -89,7 +89,7 @@ mod test {
         assert_eq!(
             expression(&b"x > 5;"[..]),
             Ok((
-                &b""[..],
+                &b";"[..],
                 Expression::BinaryExpression(Box::new(BinaryExpression {
                     left: Expression::Identifier(Identifier {
                         name: String::from("x")
@@ -106,7 +106,7 @@ mod test {
         assert_eq!(
             expression(&b"1 > 2 + 3;"[..]),
             Ok((
-                &b""[..],
+                &b";"[..],
                 Expression::BinaryExpression(Box::new(BinaryExpression {
                     left: Expression::BinaryExpression(Box::new(BinaryExpression {
                         left: Expression::Literal(Literal::Number(1)),

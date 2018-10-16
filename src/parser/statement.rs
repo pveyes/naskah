@@ -1,6 +1,6 @@
+use super::expr::expression;
 use super::variable::variable_declaration;
-use ast::BlockStatement;
-use ast::Statement;
+use ast::*;
 
 named!(
     statement<Statement>,
@@ -8,6 +8,7 @@ named!(
         map!(variable_declaration, |v| Statement::VariableDeclaration(v))
             | map!(block_statement, |b| Statement::BlockStatement(b))
             | loop_statement
+            | if_statement
             | empty_statement
     )
 );
@@ -27,13 +28,25 @@ named!(
 
 named!(
     loop_statement<Statement>,
-    do_parse!(ws!(tag!("loop")) >> s: block_statement >> (Statement::Loop(s)))
+    do_parse!(ws!(tag!("ulang")) >> s: block_statement >> (Statement::Loop(s)))
+);
+
+named!(
+    if_statement<Statement>,
+    do_parse!(
+        ws!(tag!("jika"))
+            >> expr: expression
+            >> s: block_statement
+            >> (Statement::IfStatement(IfStatement {
+                test: expr,
+                consequent: s,
+            }))
+    )
 );
 
 #[cfg(test)]
 mod test {
     use super::*;
-    use ast::*;
 
     #[test]
     fn test_empty_statement() {
@@ -89,7 +102,7 @@ mod test {
     #[test]
     fn test_loop_statement() {
         assert_eq!(
-            statement(&b"loop {\nmisal y = kosong;\n}"[..]),
+            statement(&b"ulang {\nmisal y = kosong;\n}"[..]),
             Ok((
                 &b""[..],
                 Statement::Loop(BlockStatement {
@@ -99,6 +112,33 @@ mod test {
                         },
                         value: Expression::Literal(Literal::Null)
                     })]
+                })
+            ))
+        );
+    }
+
+    #[test]
+    fn test_if_statement() {
+        assert_eq!(
+            statement(&b"jika a == salah {\nmisal z = benar;\n}"[..]),
+            Ok((
+                &b""[..],
+                Statement::IfStatement(IfStatement {
+                    test: Expression::BinaryExpression(Box::new(BinaryExpression {
+                        left: Expression::Identifier(Identifier {
+                            name: String::from("a")
+                        }),
+                        right: Expression::Literal(Literal::Boolean(false)),
+                        operator: Operator::Equal
+                    })),
+                    consequent: BlockStatement {
+                        body: vec![Statement::VariableDeclaration(VariableDeclaration {
+                            id: Identifier {
+                                name: String::from("z")
+                            },
+                            value: Expression::Literal(Literal::Boolean(true))
+                        })]
+                    }
                 })
             ))
         );
