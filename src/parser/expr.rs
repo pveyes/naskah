@@ -4,6 +4,8 @@ use ast::*;
 
 named!(
     fn_arguments<Vec<Expression>>,
+    // this is buggy because we can do fn(a b)
+    // TODO fix this
     fold_many0!(
         do_parse!(e: expression >> opt!(tag!(",")) >> (e)),
         Vec::new(),
@@ -30,24 +32,24 @@ named!(
 
 named!(
     simple_expression<Expression>,
-    ws!(alt_complete!(
+    alt_complete!(
         map!(literal, |l| Expression::Literal(l)) | map!(identifier, |i| Expression::Identifier(i))
-    ))
+    )
 );
 
 named!(
   pub expression<Expression>,
-  do_parse!(
-    expr: alt_complete!(
-        call_expression |
-        binary_expression |
-        simple_expression
-    ) >> (expr)
+  alt_complete!(
+      call_expression |
+      binary_expression |
+      simple_expression
   )
 );
 
 named!(
     operator<Operator>,
+    // we use alt_complete here just to be safe
+    // because operator can contains different length
     alt_complete!(
         map!(tag!("+"), |_| Operator::Plus)
             | map!(tag!("-"), |_| Operator::Minus)
@@ -59,17 +61,17 @@ named!(
 );
 
 named!(
-    binary_expression<Expression>,
+    pub binary_expression<Expression>,
     do_parse!(
         first: simple_expression
             >> fold: fold_many0!(
-                do_parse!(op: operator >> expr: simple_expression >> (op, expr)),
+                do_parse!(op: ws!(operator) >> expr: simple_expression >> (op, expr)),
                 first,
-                |expr1: Expression, (op, expr2): (Operator, Expression)| {
+                |left: Expression, (operator, right): (Operator, Expression)| {
                     Expression::BinaryExpression(Box::new(BinaryExpression {
-                        left: expr1,
-                        right: expr2,
-                        operator: op,
+                        left,
+                        right,
+                        operator,
                     }))
                 }
             )

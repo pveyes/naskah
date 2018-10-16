@@ -16,17 +16,19 @@ named!(pub null_literal<Literal>, map!(tag!("kosong"), |_| Literal::Null));
 
 named!(
     string_literal<Literal>,
-    do_parse!(
-        tag!("\"")
-            >> s: map_res!(take_until!("\""), str::from_utf8)
-            >> tag!("\"")
-            >> (Literal::String(String::from(s)))
+    map!(
+        delimited!(
+            char!('"'),
+            map_res!(is_not!("\""), str::from_utf8),
+            char!('"')
+        ),
+        |s| Literal::String(String::from(s))
     )
 );
 
 named!(
   pub literal<Literal>,
-  alt_complete!(boolean_literal | number_literal | string_literal | null_literal)
+  alt_complete!(null_literal | boolean_literal | number_literal | string_literal)
 );
 
 #[cfg(test)]

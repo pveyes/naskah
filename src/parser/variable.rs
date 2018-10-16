@@ -4,17 +4,19 @@ use ast::VariableDeclaration;
 
 named!(
   pub variable_declaration<VariableDeclaration>,
-  do_parse!(
-    tag!("misal")
-      >> id: ws!(identifier)
-      >> tag!("=")
-      >> expr: ws!(expression)
+  preceded!(tag!("misal "), do_parse!(
+      id: identifier
+      // we can do either x = 2 or x=2
+      // both is fine
+      >> ws!(tag!("="))
+      >> expr: expression
       >> tag!(";")
       >> (VariableDeclaration {
         id: id,
         value: expr
       })
-  )
+
+  ))
 );
 
 #[cfg(test)]
