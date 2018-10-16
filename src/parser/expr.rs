@@ -1,8 +1,32 @@
 use super::identifier::identifier;
 use super::literal::literal;
-use ast::BinaryExpression;
-use ast::Expression;
-use ast::Operator;
+use ast::*;
+
+named!(
+    fn_arguments<Vec<Expression>>,
+    fold_many0!(
+        do_parse!(e: expression >> opt!(tag!(",")) >> (e)),
+        Vec::new(),
+        |mut acc: Vec<Expression>, item| {
+            acc.push(item);
+            acc
+        }
+    )
+);
+
+named!(
+    call_expression<Expression>,
+    do_parse!(
+        c: identifier
+            >> tag!("(")
+            >> args: fn_arguments
+            >> tag!(")")
+            >> (Expression::CallExpression(CallExpression {
+                callee: c,
+                arguments: args
+            }))
+    )
+);
 
 named!(
     simple_expression<Expression>,
@@ -15,6 +39,7 @@ named!(
   pub expression<Expression>,
   do_parse!(
     expr: alt_complete!(
+        call_expression |
         binary_expression |
         simple_expression
     ) >> (expr)
@@ -116,6 +141,40 @@ mod test {
                     right: Expression::Literal(Literal::Number(3)),
                     operator: Operator::Plus,
                 }))
+            ))
+        );
+    }
+
+    #[test]
+    fn basic_call_expression() {
+        assert_eq!(
+            expression(&b"hello()"[..]),
+            Ok((
+                &b""[..],
+                Expression::CallExpression(CallExpression {
+                    callee: Identifier {
+                        name: String::from("hello")
+                    },
+                    arguments: vec![]
+                })
+            ))
+        );
+    }
+
+    #[test]
+    fn fn_with_arguments() {
+        assert_eq!(
+            expression(&b"tulis(\"hello, world!\")"[..]),
+            Ok((
+                &b""[..],
+                Expression::CallExpression(CallExpression {
+                    callee: Identifier {
+                        name: String::from("tulis")
+                    },
+                    arguments: vec![Expression::Literal(Literal::String(String::from(
+                        "hello, world!"
+                    )))]
+                })
             ))
         );
     }

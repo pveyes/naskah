@@ -12,10 +12,17 @@ pub struct Identifier {
 }
 
 #[derive(PartialEq, Debug)]
+pub struct CallExpression {
+    pub callee: Identifier,
+    pub arguments: Vec<Expression>,
+}
+
+#[derive(PartialEq, Debug)]
 pub enum Expression {
     Identifier(Identifier),
     Literal(Literal),
     BinaryExpression(Box<BinaryExpression>),
+    CallExpression(CallExpression),
 }
 
 #[derive(PartialEq, Debug)]
