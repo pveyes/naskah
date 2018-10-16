@@ -7,8 +7,7 @@ use ast::*;
 named!(
     statement<Statement>,
     alt_complete!(
-        if_else_statement
-            | if_statement
+        if_statement
             | loop_statement
             | map!(block_statement, |b| Statement::BlockStatement(b))
             | map!(variable_declaration, |v| Statement::VariableDeclaration(v))
@@ -61,7 +60,7 @@ named!(
 );
 
 named!(
-    if_statement<Statement>,
+    single_if_statement<Statement>,
     preceded!(
         tag!("jika "),
         do_parse!(
@@ -93,6 +92,16 @@ named!(
                 }))
         )
     )
+);
+
+named!(
+    if_statement<Statement>,
+    // the reason we put if_else_statement first is because the
+    // similarities of both syntax, considering single_if_statement will
+    // also parse if_else_statement (albeit returning Incomplete), we
+    // have to prioritize if_else and only parse single_if_statement
+    // if the first parser failed. maybe not the most performant, but it works
+    alt_complete!(if_else_statement | single_if_statement)
 );
 
 #[cfg(test)]
@@ -232,6 +241,71 @@ mod test {
         assert_eq!(
             statement(&b"jika a kosong {\n}"[..]),
             statement(&b"jika a == kosong {\n}"[..])
+        );
+    }
+
+    #[test]
+    fn recursive_if_else() {
+        assert_eq!(
+            statement(&b"jika a benar {\n} atau jika b kosong {\n}"[..]),
+            Ok((
+                &b""[..],
+                Statement::IfStatement(IfStatement {
+                    test: Expression::BinaryExpression(Box::new(BinaryExpression {
+                        left: Expression::Identifier(Identifier {
+                            name: String::from("a")
+                        }),
+                        right: Expression::Literal(Literal::Boolean(true)),
+                        operator: Operator::Equal
+                    })),
+                    consequent: BlockStatement { body: None },
+                    alternate: Some(AlternateStatement::IfStatement(Box::new(
+                        Statement::IfStatement(IfStatement {
+                            test: Expression::BinaryExpression(Box::new(BinaryExpression {
+                                left: Expression::Identifier(Identifier {
+                                    name: String::from("b")
+                                }),
+                                right: Expression::Literal(Literal::Null),
+                                operator: Operator::Equal
+                            })),
+                            consequent: BlockStatement { body: None },
+                            alternate: None
+                        })
+                    )))
+                })
+            ))
+        );
+
+        assert_eq!(
+            statement(&b"jika c == 2 {\n} atau jika d benar {\n} atau {\n}"[..]),
+            Ok((
+                &b""[..],
+                Statement::IfStatement(IfStatement {
+                    test: Expression::BinaryExpression(Box::new(BinaryExpression {
+                        left: Expression::Identifier(Identifier {
+                            name: String::from("c")
+                        }),
+                        right: Expression::Literal(Literal::Number(2)),
+                        operator: Operator::Equal
+                    })),
+                    consequent: BlockStatement { body: None },
+                    alternate: Some(AlternateStatement::IfStatement(Box::new(
+                        Statement::IfStatement(IfStatement {
+                            test: Expression::BinaryExpression(Box::new(BinaryExpression {
+                                left: Expression::Identifier(Identifier {
+                                    name: String::from("d")
+                                }),
+                                right: Expression::Literal(Literal::Boolean(true)),
+                                operator: Operator::Equal
+                            })),
+                            consequent: BlockStatement { body: None },
+                            alternate: Some(AlternateStatement::BlockStatement(BlockStatement {
+                                body: None
+                            }))
+                        })
+                    )))
+                })
+            ))
         );
     }
 }
