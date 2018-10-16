@@ -9,6 +9,7 @@ named!(
       >> id: ws!(identifier)
       >> tag!("=")
       >> expr: ws!(expression)
+      >> tag!(";")
       >> (VariableDeclaration {
         id: id,
         value: expr
@@ -28,9 +29,9 @@ mod test {
     #[test]
     fn boolean_assignment() {
         assert_eq!(
-            variable_declaration(&b"misal x = benar;z"[..]),
+            variable_declaration(&b"misal x = benar;"[..]),
             Ok((
-                &b"z"[..],
+                &b""[..],
                 VariableDeclaration {
                     id: Identifier {
                         name: String::from("x")
@@ -44,9 +45,9 @@ mod test {
     #[test]
     fn string_assignment() {
         assert_eq!(
-            variable_declaration(&b"misal x = \"str\";rest"[..]),
+            variable_declaration(&b"misal x = \"str\";"[..]),
             Ok((
-                &b"rest"[..],
+                &b""[..],
                 VariableDeclaration {
                     id: Identifier {
                         name: String::from("x")
@@ -60,9 +61,9 @@ mod test {
     #[test]
     fn number_assignment() {
         assert_eq!(
-            variable_declaration(&b"misal x = 5;rest"[..]),
+            variable_declaration(&b"misal x = 5;"[..]),
             Ok((
-                &b"rest"[..],
+                &b""[..],
                 VariableDeclaration {
                     id: Identifier {
                         name: String::from("x")
@@ -76,9 +77,9 @@ mod test {
     #[test]
     fn null_assignment() {
         assert_eq!(
-            variable_declaration(&b"misal x = kosong;rest"[..]),
+            variable_declaration(&b"misal x = kosong;"[..]),
             Ok((
-                &b"rest"[..],
+                &b""[..],
                 VariableDeclaration {
                     id: Identifier {
                         name: String::from("x")
@@ -92,9 +93,9 @@ mod test {
     #[test]
     fn identifier_assignment() {
         assert_eq!(
-            variable_declaration(&b"misal x = a;rest"[..]),
+            variable_declaration(&b"misal x = a;"[..]),
             Ok((
-                &b"rest"[..],
+                &b""[..],
                 VariableDeclaration {
                     id: Identifier {
                         name: String::from("x")
@@ -110,9 +111,9 @@ mod test {
     #[test]
     fn binary_expression_assignment() {
         assert_eq!(
-            variable_declaration(&b"misal sum = 2 + 3;rest"[..]),
+            variable_declaration(&b"misal sum = 2 + 3;"[..]),
             Ok((
-                &b"rest"[..],
+                &b""[..],
                 VariableDeclaration {
                     id: Identifier {
                         name: String::from("sum")
