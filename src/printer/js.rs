@@ -140,6 +140,8 @@ fn print_statement(s: Statement) -> String {
         Statement::BlockStatement(s) => print_block_statement(s),
         Statement::IfStatement(s) => print_if_statement(s),
         Statement::Loop(s) => print_loop_statement(s),
+        Statement::Break => String::from("break;"),
+        Statement::Continue => String::from("continue;"),
     };
     res.push_str(&x);
     res.push_str("\n");
