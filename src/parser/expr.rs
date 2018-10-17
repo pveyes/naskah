@@ -51,8 +51,12 @@ named!(
     // we use alt_complete here just to be safe
     // because operator can contains different length
     alt_complete!(
-        map!(tag!("+"), |_| Operator::Plus)
-            | map!(tag!("-"), |_| Operator::Minus)
+        map!(tag!("+"), |_| Operator::Addition)
+            | map!(tag!("-"), |_| Operator::Substraction)
+            | map!(tag!("*"), |_| Operator::Multiplication)
+            | map!(tag!("/"), |_| Operator::Division)
+            | map!(tag!("%"), |_| Operator::Remainder)
+            | map!(tag!("^"), |_| Operator::Exponentiation)
             | map!(tag!("=="), |_| Operator::Equal)
             | map!(tag!("!="), |_| Operator::NotEqual)
             | map!(tag!(">"), |_| Operator::GreaterThan)
@@ -87,8 +91,18 @@ mod test {
 
     #[test]
     fn op() {
-        assert_eq!(operator(&b"+"[..]), Ok((&b""[..], Operator::Plus)));
-        assert_eq!(operator(&b"-"[..]), Ok((&b""[..], Operator::Minus)));
+        assert_eq!(operator(&b"+"[..]), Ok((&b""[..], Operator::Addition)));
+        assert_eq!(operator(&b"-"[..]), Ok((&b""[..], Operator::Substraction)));
+        assert_eq!(
+            operator(&b"*"[..]),
+            Ok((&b""[..], Operator::Multiplication))
+        );
+        assert_eq!(operator(&b"/"[..]), Ok((&b""[..], Operator::Division)));
+        assert_eq!(operator(&b"%"[..]), Ok((&b""[..], Operator::Remainder)));
+        assert_eq!(
+            operator(&b"^"[..]),
+            Ok((&b""[..], Operator::Exponentiation))
+        );
         assert_eq!(operator(&b"=="[..]), Ok((&b""[..], Operator::Equal)));
         assert_eq!(operator(&b"!="[..]), Ok((&b""[..], Operator::NotEqual)));
         assert_eq!(operator(&b">"[..]), Ok((&b""[..], Operator::GreaterThan)));
@@ -141,7 +155,7 @@ mod test {
                         operator: Operator::GreaterThan,
                     })),
                     right: Expression::Literal(Literal::Number(3)),
-                    operator: Operator::Plus,
+                    operator: Operator::Addition,
                 }))
             ))
         );

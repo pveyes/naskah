@@ -40,8 +40,12 @@ fn print_binary_expression(b: Box<BinaryExpression>) -> String {
 
 fn print_operator(op: Operator) -> String {
     match op {
-        Operator::Plus => String::from("+"),
-        Operator::Minus => String::from("-"),
+        Operator::Addition => String::from("+"),
+        Operator::Substraction => String::from("-"),
+        Operator::Multiplication => String::from("*"),
+        Operator::Division => String::from("/"),
+        Operator::Remainder => String::from("%"),
+        Operator::Exponentiation => String::from("^"),
         Operator::Equal => String::from("=="),
         Operator::NotEqual => String::from("!="),
         Operator::GreaterThan => String::from(">"),

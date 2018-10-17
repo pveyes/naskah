@@ -123,7 +123,7 @@ mod test {
                     value: Expression::BinaryExpression(Box::new(BinaryExpression {
                         left: Expression::Literal(Literal::Number(2)),
                         right: Expression::Literal(Literal::Number(3)),
-                        operator: Operator::Plus,
+                        operator: Operator::Addition,
                     }))
                 }
             ))
