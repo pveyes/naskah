@@ -1,0 +1,76 @@
+html, body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+}
+
+body {
+  background-color: #fff1ec;
+}
+
+main {
+  height: 100vh;
+}
+
+.container {
+  width: 700px;
+  margin: 0 auto;
+}
+
+header {
+  text-align: center;
+}
+
+header h1 {
+  font-size: 45px;
+  margin: 0;
+  padding: 13px 0;
+}
+
+.hero {
+  margin-bottom: 50px;
+}
+
+.naskah {
+  font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
+  font-weight: 600;
+}
+
+.demo {
+  text-align: center;
+}
+
+.demo-playground {
+  display: flex;
+  justify-content: space-around;
+  margin-top: 20px;
+  text-align: initial;
+}
+
+.demo-playground > div {
+  position: relative;
+}
+
+.demo-playground label {
+  display: block;
+  margin-bottom: 20px;
+}
+
+textarea {
+  border: none;
+  outline: none;
+  display: block;
+  width: 100%;
+}
+
+textarea, pre {
+  margin: 0;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 14px;
+  border: 1px solid #ddd;
+  background-color: #fff;
+  width: 300px;
+  min-height: 300px;
+  padding: 5px 10px;
+  border-radius: 3px;
+  box-sizing: border-box;
+}
