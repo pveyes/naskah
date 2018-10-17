@@ -27,8 +27,12 @@ pub enum Expression {
 
 #[derive(PartialEq, Debug)]
 pub enum Operator {
-    Plus,
-    Minus,
+    Addition,
+    Substraction,
+    Multiplication,
+    Division,
+    Remainder,
+    Exponentiation,
     Equal,
     NotEqual,
     GreaterThan,
