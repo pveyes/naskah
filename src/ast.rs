@@ -18,11 +18,18 @@ pub struct CallExpression {
 }
 
 #[derive(PartialEq, Debug)]
+pub struct AssignmentExpression {
+    pub id: Identifier,
+    pub value: Box<Expression>,
+}
+
+#[derive(PartialEq, Debug)]
 pub enum Expression {
     Identifier(Identifier),
     Literal(Literal),
     BinaryExpression(Box<BinaryExpression>),
     CallExpression(CallExpression),
+    Assignment(AssignmentExpression),
 }
 
 #[derive(PartialEq, Debug)]
@@ -74,6 +81,7 @@ pub struct BlockStatement {
 pub enum Statement {
     Break,
     Continue,
+    Expression(Expression),
     VariableDeclaration(VariableDeclaration),
     BlockStatement(BlockStatement),
     Loop(BlockStatement),

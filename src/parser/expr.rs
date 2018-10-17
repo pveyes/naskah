@@ -3,6 +3,19 @@ use super::literal::literal;
 use ast::*;
 
 named!(
+    assignment_expression<Expression>,
+    do_parse!(
+        i: identifier
+            >> ws!(tag!("="))
+            >> e: expression
+            >> (Expression::Assignment(AssignmentExpression {
+                id: i,
+                value: Box::new(e)
+            }))
+    )
+);
+
+named!(
     fn_arguments<Vec<Expression>>,
     // this is buggy because we can do fn(a b)
     // TODO fix this
@@ -40,6 +53,7 @@ named!(
 named!(
   pub expression<Expression>,
   alt_complete!(
+      assignment_expression |
       call_expression |
       binary_expression |
       simple_expression
