@@ -50,7 +50,7 @@ pub struct VariableDeclaration {
 
 #[derive(PartialEq, Debug)]
 pub enum AlternateStatement {
-    IfStatement(Box<Statement>),
+    IfStatement(Box<IfStatement>),
     BlockStatement(BlockStatement),
 }
 

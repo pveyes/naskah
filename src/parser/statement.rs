@@ -5,9 +5,9 @@ use super::variable::variable_declaration;
 use ast::*;
 
 named!(
-    statement<Statement>,
+    pub statement<Statement>,
     alt_complete!(
-        if_statement
+        map!(if_statement, |b| Statement::IfStatement(b))
             | loop_statement
             | map!(block_statement, |b| Statement::BlockStatement(b))
             | map!(variable_declaration, |v| Statement::VariableDeclaration(v))
@@ -60,24 +60,24 @@ named!(
 );
 
 named!(
-    single_if_statement<Statement>,
+    single_if_statement<IfStatement>,
     preceded!(
         tag!("jika "),
         do_parse!(
             expr: alt_complete!(special_if_condition | binary_expression)
                 >> tag!(" ")
                 >> st: block_statement
-                >> (Statement::IfStatement(IfStatement {
+                >> (IfStatement {
                     test: expr,
                     consequent: st,
                     alternate: None,
-                }))
+                })
         )
     )
 );
 
 named!(
-    if_else_statement<Statement>,
+    if_else_statement<IfStatement>,
     preceded!(
         tag!("jika "),
         do_parse!(
@@ -85,17 +85,17 @@ named!(
                 >> tag!(" ")
                 >> st: block_statement
                 >> els: else_statement
-                >> (Statement::IfStatement(IfStatement {
+                >> (IfStatement {
                     test: expr,
                     consequent: st,
                     alternate: els,
-                }))
+                })
         )
     )
 );
 
 named!(
-    if_statement<Statement>,
+    if_statement<IfStatement>,
     // the reason we put if_else_statement first is because the
     // similarities of both syntax, considering single_if_statement will
     // also parse if_else_statement (albeit returning Incomplete), we
@@ -259,19 +259,17 @@ mod test {
                         operator: Operator::Equal
                     })),
                     consequent: BlockStatement { body: None },
-                    alternate: Some(AlternateStatement::IfStatement(Box::new(
-                        Statement::IfStatement(IfStatement {
-                            test: Expression::BinaryExpression(Box::new(BinaryExpression {
-                                left: Expression::Identifier(Identifier {
-                                    name: String::from("b")
-                                }),
-                                right: Expression::Literal(Literal::Null),
-                                operator: Operator::Equal
-                            })),
-                            consequent: BlockStatement { body: None },
-                            alternate: None
-                        })
-                    )))
+                    alternate: Some(AlternateStatement::IfStatement(Box::new(IfStatement {
+                        test: Expression::BinaryExpression(Box::new(BinaryExpression {
+                            left: Expression::Identifier(Identifier {
+                                name: String::from("b")
+                            }),
+                            right: Expression::Literal(Literal::Null),
+                            operator: Operator::Equal
+                        })),
+                        consequent: BlockStatement { body: None },
+                        alternate: None
+                    })))
                 })
             ))
         );
@@ -289,21 +287,19 @@ mod test {
                         operator: Operator::Equal
                     })),
                     consequent: BlockStatement { body: None },
-                    alternate: Some(AlternateStatement::IfStatement(Box::new(
-                        Statement::IfStatement(IfStatement {
-                            test: Expression::BinaryExpression(Box::new(BinaryExpression {
-                                left: Expression::Identifier(Identifier {
-                                    name: String::from("d")
-                                }),
-                                right: Expression::Literal(Literal::Boolean(true)),
-                                operator: Operator::Equal
-                            })),
-                            consequent: BlockStatement { body: None },
-                            alternate: Some(AlternateStatement::BlockStatement(BlockStatement {
-                                body: None
-                            }))
-                        })
-                    )))
+                    alternate: Some(AlternateStatement::IfStatement(Box::new(IfStatement {
+                        test: Expression::BinaryExpression(Box::new(BinaryExpression {
+                            left: Expression::Identifier(Identifier {
+                                name: String::from("d")
+                            }),
+                            right: Expression::Literal(Literal::Boolean(true)),
+                            operator: Operator::Equal
+                        })),
+                        consequent: BlockStatement { body: None },
+                        alternate: Some(AlternateStatement::BlockStatement(BlockStatement {
+                            body: None
+                        }))
+                    })))
                 })
             ))
         );

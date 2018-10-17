@@ -7,3 +7,6 @@ authors = ["Fatih Kalifa <fatihkalifa@gmail.com>"]
 lazy_static = "1.1.0"
 nom = { version = "^4.1.0", features = ["regexp", "regexp_macros"] }
 regex = "1.0.5"
+
+[lib]
+crate-type = ["cdylib"]

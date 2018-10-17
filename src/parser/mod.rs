@@ -5,10 +5,21 @@ mod number;
 mod statement;
 mod variable;
 
-use ast::VariableDeclaration;
+use self::statement::statement;
+use ast::Program;
 use nom;
 
-pub fn parse(input: &str) -> Result<VariableDeclaration, nom::Err<&[u8]>> {
-    let (_, decl) = variable::variable_declaration(input.as_bytes())?;
-    Ok(decl)
+named!(
+  pub program<Program>,
+  map!(
+    many0!(
+      do_parse!(s: statement >> tag!("\n") >> (s))
+    ),
+    |body| Program { body }
+  )
+);
+
+pub fn parse(input: &str) -> Result<Program, nom::Err<&[u8]>> {
+    let (_res, p) = program(input.as_bytes())?;
+    Ok(p)
 }
