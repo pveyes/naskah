@@ -66,8 +66,18 @@ fn print_call_expression(c: CallExpression) -> String {
     x
 }
 
+fn print_assignment_expression(s: AssignmentExpression) -> String {
+    let mut res = String::new();
+    res.push_str(&print_identifier(s.id));
+    res.push_str(" = ");
+    res.push_str(&print_expression(*s.value));
+    res.push_str(";");
+    res
+}
+
 fn print_expression(e: Expression) -> String {
     match e {
+        Expression::Assignment(e) => print_assignment_expression(e),
         Expression::Literal(l) => print_literal(l),
         Expression::BinaryExpression(b) => print_binary_expression(b),
         Expression::CallExpression(c) => print_call_expression(c),
@@ -140,6 +150,12 @@ fn print_loop_statement(b: BlockStatement) -> String {
 fn print_statement(s: Statement) -> String {
     let mut res = String::new();
     let x: String = match s {
+        Statement::Expression(e) => {
+            let mut res = String::new();
+            res.push_str(&print_expression(e));
+            res.push_str(";");
+            res
+        }
         Statement::VariableDeclaration(v) => print_variable_declaration(v),
         Statement::BlockStatement(s) => print_block_statement(s),
         Statement::IfStatement(s) => print_if_statement(s),

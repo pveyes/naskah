@@ -1,4 +1,4 @@
-use super::expr::binary_expression;
+use super::expr::{binary_expression, expression};
 use super::identifier::identifier;
 use super::literal::{boolean_literal, null_literal};
 use super::variable::variable_declaration;
@@ -15,6 +15,11 @@ named!(
 );
 
 named!(
+    expression_statement<Statement>,
+    map!(expression, |e| Statement::Expression(e))
+);
+
+named!(
     pub statement<Statement>,
     alt_complete!(
             loop_statement
@@ -24,6 +29,7 @@ named!(
             | map!(if_statement, |b| Statement::IfStatement(b))
             | map!(block_statement, |b| Statement::BlockStatement(b))
             | map!(variable_declaration, |v| Statement::VariableDeclaration(v))
+            | expression_statement
     )
 );
 
@@ -309,6 +315,44 @@ mod test {
                         }))
                     })))
                 })
+            ))
+        );
+    }
+
+    #[test]
+    fn simple_expression_statement() {
+        assert_eq!(
+            statement(&b"alert()"[..]),
+            Ok((
+                &b""[..],
+                Statement::Expression(Expression::CallExpression(CallExpression {
+                    callee: Identifier {
+                        name: String::from("alert")
+                    },
+                    arguments: vec![]
+                }))
+            ))
+        );
+    }
+
+    #[test]
+    fn reassignment() {
+        assert_eq!(
+            statement(&b"x = x ^ 5;"[..]),
+            Ok((
+                &b";"[..],
+                Statement::Expression(Expression::Assignment(AssignmentExpression {
+                    id: Identifier {
+                        name: String::from("x"),
+                    },
+                    value: Box::new(Expression::BinaryExpression(Box::new(BinaryExpression {
+                        left: Expression::Identifier(Identifier {
+                            name: String::from("x"),
+                        }),
+                        right: Expression::Literal(Literal::Number(5)),
+                        operator: Operator::Exponentiation,
+                    })))
+                }))
             ))
         );
     }
