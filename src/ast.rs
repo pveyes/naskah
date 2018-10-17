@@ -68,6 +68,8 @@ pub struct BlockStatement {
 
 #[derive(PartialEq, Debug)]
 pub enum Statement {
+    Break,
+    Continue,
     VariableDeclaration(VariableDeclaration),
     BlockStatement(BlockStatement),
     Loop(BlockStatement),

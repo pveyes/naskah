@@ -5,10 +5,23 @@ use super::variable::variable_declaration;
 use ast::*;
 
 named!(
+    break_statement<Statement>,
+    map!(tag!("berhenti;"), |_| Statement::Break)
+);
+
+named!(
+    continue_statement<Statement>,
+    map!(tag!("lanjut;"), |_| Statement::Continue)
+);
+
+named!(
     pub statement<Statement>,
     alt_complete!(
-        map!(if_statement, |b| Statement::IfStatement(b))
-            | loop_statement
+            loop_statement
+            // TODO unsyntactic break/continue
+            | break_statement
+            | continue_statement
+            | map!(if_statement, |b| Statement::IfStatement(b))
             | map!(block_statement, |b| Statement::BlockStatement(b))
             | map!(variable_declaration, |v| Statement::VariableDeclaration(v))
     )
@@ -19,7 +32,7 @@ named!(
     map!(
         // block statement can contains nothing, that's why we need to
         // exclude any whitespace
-        delimited!(tag!("{"), ws!(opt!(many1!(statement))), tag!("}")),
+        delimited!(tag!("{"), ws!(opt!(many1!(ws!(statement)))), tag!("}")),
         |body| BlockStatement { body }
     )
 );
@@ -155,16 +168,11 @@ mod test {
     #[test]
     fn test_loop_statement() {
         assert_eq!(
-            statement(&b"ulang {\nmisal y = kosong;\n}"[..]),
+            statement(&b"ulang {\nberhenti;\nlanjut;\n}"[..]),
             Ok((
                 &b""[..],
                 Statement::Loop(BlockStatement {
-                    body: Some(vec![Statement::VariableDeclaration(VariableDeclaration {
-                        id: Identifier {
-                            name: String::from("y")
-                        },
-                        value: Expression::Literal(Literal::Null)
-                    })])
+                    body: Some(vec![Statement::Break, Statement::Continue])
                 })
             ))
         );
