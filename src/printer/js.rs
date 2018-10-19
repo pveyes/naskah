@@ -49,7 +49,7 @@ fn print_operator(op: Operator) -> String {
         Operator::Equal => String::from("=="),
         Operator::NotEqual => String::from("!="),
         Operator::GreaterThan => String::from(">"),
-        Operator::LessThan => String::from(">"),
+        Operator::LessThan => String::from("<"),
     }
 }
 
