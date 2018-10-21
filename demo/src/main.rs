@@ -19,7 +19,8 @@ enum Msg {
 const EXAMPLE_CODE: &str = "misal x = 2 + 2;
 misal y = x > 2;
 jika y benar {
-    menang()
+    x = x + 1;
+    menang();
 }
 ";
 
