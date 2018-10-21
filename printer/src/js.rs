@@ -1,5 +1,24 @@
 use parser::ast::*;
 
+fn insert_indent(depth: u8) -> String {
+    let mut res = String::new();
+    let mut x = 0;
+
+    if depth == 0 {
+        return res;
+    }
+
+    loop {
+        res.push_str("  ");
+        x = x + 1;
+        if x >= depth {
+            break;
+        }
+    }
+
+    res
+}
+
 fn print_literal(l: Literal) -> String {
     match l {
         Literal::Null => String::from("null"),
@@ -84,28 +103,30 @@ fn print_expression(e: Expression) -> String {
     }
 }
 
-fn print_block_statement(b: BlockStatement) -> String {
+fn print_block_statement(b: BlockStatement, depth: u8) -> String {
     let mut res = String::new();
     res.push_str("{\n");
     let content = match b.body {
         Some(statements) => {
             let mut sts = String::new();
             for statement in statements {
-                sts.push_str(&print_statement(statement));
+                sts.push_str(&print_statement(statement, depth + 1));
             }
             sts
         }
         None => String::from(""),
     };
     res.push_str(&content);
+    res.push_str(&insert_indent(depth));
     res.push_str("}");
     res
 }
 
-fn print_variable_declaration(v: VariableDeclaration) -> String {
+fn print_variable_declaration(v: VariableDeclaration, depth: u8) -> String {
     let id = print_identifier(v.id);
     let val = print_expression(v.value);
     let mut st = String::new();
+    st.push_str(&insert_indent(depth));
     st.push_str("var ");
     st.push_str(&id);
     st.push_str(" = ");
@@ -114,14 +135,14 @@ fn print_variable_declaration(v: VariableDeclaration) -> String {
     st
 }
 
-fn print_if_statement(i: IfStatement) -> String {
+fn print_if_statement(i: IfStatement, depth: u8, inside_else: bool) -> String {
     let mut res = String::new();
     let else_statement = match i.alternate {
         Some(st) => {
             let mut res = String::new();
             let x = match st {
-                AlternateStatement::IfStatement(i) => print_if_statement(*i),
-                AlternateStatement::BlockStatement(b) => print_block_statement(b),
+                AlternateStatement::IfStatement(i) => print_if_statement(*i, depth, true),
+                AlternateStatement::BlockStatement(b) => print_block_statement(b, depth),
             };
 
             res.push_str(" else ");
@@ -131,36 +152,41 @@ fn print_if_statement(i: IfStatement) -> String {
         None => String::from(""),
     };
 
+    if !inside_else {
+        res.push_str(&insert_indent(depth));
+    }
     res.push_str("if (");
     res.push_str(&print_expression(i.test));
     res.push_str(") ");
-    res.push_str(&print_block_statement(i.consequent));
+    res.push_str(&print_block_statement(i.consequent, depth));
     res.push_str(&else_statement);
     res
 }
 
-fn print_loop_statement(b: BlockStatement) -> String {
+fn print_loop_statement(b: BlockStatement, depth: u8) -> String {
     let mut res = String::new();
+    res.push_str(&insert_indent(depth));
     res.push_str("while(true) ");
-    res.push_str(&print_block_statement(b));
+    res.push_str(&print_block_statement(b, depth));
     res
 }
 
-fn print_statement(s: Statement) -> String {
+fn print_statement(s: Statement, depth: u8) -> String {
     let mut res = String::new();
     let x: String = match s {
         Statement::Expression(e) => {
             let mut res = String::new();
+            res.push_str(&insert_indent(depth));
             res.push_str(&print_expression(e));
             res.push_str(";");
             res
         }
-        Statement::VariableDeclaration(v) => print_variable_declaration(v),
-        Statement::BlockStatement(s) => print_block_statement(s),
-        Statement::IfStatement(s) => print_if_statement(s),
-        Statement::Loop(s) => print_loop_statement(s),
-        Statement::Break => String::from("break;"),
-        Statement::Continue => String::from("continue;"),
+        Statement::VariableDeclaration(v) => print_variable_declaration(v, depth),
+        Statement::BlockStatement(s) => print_block_statement(s, depth),
+        Statement::IfStatement(s) => print_if_statement(s, depth, false),
+        Statement::Loop(s) => print_loop_statement(s, depth),
+        Statement::Break => insert_indent(depth) + &String::from("break;"),
+        Statement::Continue => insert_indent(depth) + &String::from("continue;"),
     };
     res.push_str(&x);
     res.push_str("\n");
@@ -170,7 +196,7 @@ fn print_statement(s: Statement) -> String {
 pub fn print(ast: Program) -> String {
     let mut js = String::new();
     for statement in ast.body {
-        js.push_str(&print_statement(statement));
+        js.push_str(&print_statement(statement, 0));
     }
 
     js
