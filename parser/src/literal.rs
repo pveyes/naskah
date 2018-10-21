@@ -1,5 +1,5 @@
+use super::ast::Literal;
 use super::number::number_literal;
-use ast::Literal;
 use std::str;
 
 named!(

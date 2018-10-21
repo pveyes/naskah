@@ -1,4 +1,4 @@
-use ast::*;
+use parser::ast::*;
 
 fn print_literal(l: Literal) -> String {
     match l {

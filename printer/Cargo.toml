@@ -1,0 +1,7 @@
+[package]
+name = "printer"
+version = "0.1.0"
+authors = ["Fatih Kalifa <fatihkalifa@gmail.com>"]
+
+[dependencies]
+parser = { path = "../parser" }

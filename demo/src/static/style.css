@@ -75,14 +75,16 @@ textarea, pre {
   box-sizing: border-box;
 }
 
-.github-corner {
-  @media (max-width: 768px) {
+@media (max-width: 768px) {
+  .github-corner {
     display: none;
   }
 }
+
 .github-corner:hover .octo-arm {
   animation: octocat-wave 560ms ease-in-out
 }
+
 @keyframes octocat-wave {
   0%, 100% { transform: rotate(0) }
   20%, 60% { transform: rotate(-25deg) }

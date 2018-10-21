@@ -1,6 +1,6 @@
+use super::ast::*;
 use super::expr::expression;
 use super::identifier::identifier;
-use ast::VariableDeclaration;
 
 named!(
   pub variable_declaration<VariableDeclaration>,
@@ -22,11 +22,6 @@ named!(
 #[cfg(test)]
 mod test {
     use super::*;
-    use ast::BinaryExpression;
-    use ast::Expression;
-    use ast::Identifier;
-    use ast::Literal;
-    use ast::Operator;
 
     #[test]
     fn boolean_assignment() {

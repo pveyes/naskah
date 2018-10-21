@@ -1,4 +1,4 @@
-use ast::Literal;
+use super::ast::Literal;
 use nom::{is_digit, is_hex_digit};
 use std::i64;
 use std::str;
