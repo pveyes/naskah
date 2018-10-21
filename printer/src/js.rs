@@ -71,7 +71,6 @@ fn print_assignment_expression(s: AssignmentExpression) -> String {
     res.push_str(&print_identifier(s.id));
     res.push_str(" = ");
     res.push_str(&print_expression(*s.value));
-    res.push_str(";");
     res
 }
 

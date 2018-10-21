@@ -16,7 +16,9 @@ named!(
 
 named!(
     expression_statement<Statement>,
-    map!(expression, |e| Statement::Expression(e))
+    map!(do_parse!(e: expression >> tag!(";") >> (e)), |e| {
+        Statement::Expression(e)
+    })
 );
 
 named!(
@@ -321,7 +323,7 @@ mod test {
     #[test]
     fn simple_expression_statement() {
         assert_eq!(
-            parse_statement(&b"alert()"[..]),
+            parse_statement(&b"alert();"[..]),
             Ok((
                 &b""[..],
                 Statement::Expression(Expression::CallExpression(CallExpression {
@@ -339,7 +341,7 @@ mod test {
         assert_eq!(
             parse_statement(&b"x = x ^ 5;"[..]),
             Ok((
-                &b";"[..],
+                &b""[..],
                 Statement::Expression(Expression::Assignment(AssignmentExpression {
                     id: Identifier {
                         name: String::from("x"),
