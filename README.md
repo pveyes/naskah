@@ -2,7 +2,7 @@
 
 > Bahasa pemrograman dengan sintaks Bahasa Indonesia
 
-Demo: https://naskah.netlify.com/
+Demo: https://naskah.now.sh/
 
 ## Tipe data
 

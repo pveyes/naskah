@@ -1,6 +1,6 @@
+use super::ast::*;
 use super::identifier::identifier;
 use super::literal::literal;
-use ast::*;
 
 named!(
     assignment_expression<Expression>,
@@ -100,8 +100,6 @@ named!(
 #[cfg(test)]
 mod test {
     use super::*;
-    use ast::Identifier;
-    use ast::Literal;
 
     #[test]
     fn op() {

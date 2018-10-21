@@ -1,8 +1,8 @@
+use super::ast::*;
 use super::expr::{binary_expression, expression};
 use super::identifier::identifier;
 use super::literal::{boolean_literal, null_literal};
 use super::variable::variable_declaration;
-use ast::*;
 
 named!(
     break_statement<Statement>,
@@ -20,7 +20,7 @@ named!(
 );
 
 named!(
-    pub statement<Statement>,
+    pub parse_statement<Statement>,
     alt_complete!(
             loop_statement
             // TODO unsyntactic break/continue
@@ -38,7 +38,11 @@ named!(
     map!(
         // block statement can contains nothing, that's why we need to
         // exclude any whitespace
-        delimited!(tag!("{"), ws!(opt!(many1!(ws!(statement)))), tag!("}")),
+        delimited!(
+            tag!("{"),
+            ws!(opt!(many1!(ws!(parse_statement)))),
+            tag!("}")
+        ),
         |body| BlockStatement { body }
     )
 );
@@ -130,7 +134,7 @@ mod test {
     #[test]
     fn empty_block_statement() {
         assert_eq!(
-            statement(&b"{\n}"[..]),
+            parse_statement(&b"{\n}"[..]),
             Ok((
                 &b""[..],
                 Statement::BlockStatement(BlockStatement { body: None })
@@ -141,7 +145,7 @@ mod test {
     #[test]
     fn var_decl_inside_block() {
         assert_eq!(
-            statement(&b"{\nmisal x = 5;\n}"[..]),
+            parse_statement(&b"{\nmisal x = 5;\n}"[..]),
             Ok((
                 &b""[..],
                 Statement::BlockStatement(BlockStatement {
@@ -159,7 +163,7 @@ mod test {
     #[test]
     fn recursive_empty_block_statement() {
         assert_eq!(
-            statement(&b"{\n{\n}\n}"[..]),
+            parse_statement(&b"{\n{\n}\n}"[..]),
             Ok((
                 &b""[..],
                 Statement::BlockStatement(BlockStatement {
@@ -174,7 +178,7 @@ mod test {
     #[test]
     fn test_loop_statement() {
         assert_eq!(
-            statement(&b"ulang {\nberhenti;\nlanjut;\n}"[..]),
+            parse_statement(&b"ulang {\nberhenti;\nlanjut;\n}"[..]),
             Ok((
                 &b""[..],
                 Statement::Loop(BlockStatement {
@@ -187,7 +191,7 @@ mod test {
     #[test]
     fn test_if_statement() {
         assert_eq!(
-            statement(&b"jika a == salah {\nmisal z = benar;\n}"[..]),
+            parse_statement(&b"jika a == salah {\nmisal z = benar;\n}"[..]),
             Ok((
                 &b""[..],
                 Statement::IfStatement(IfStatement {
@@ -214,13 +218,8 @@ mod test {
 
     #[test]
     fn test_if_else_statement() {
-        use std::str;
-        println!(
-            "pret xx{}",
-            str::from_utf8(&vec![32, 97, 116, 97, 117, 32, 123, 10, 125]).unwrap()
-        );
         assert_eq!(
-            statement(&b"jika a == salah {\n} atau {\n}"[..]),
+            parse_statement(&b"jika a == salah {\n} atau {\n}"[..]),
             Ok((
                 &b""[..],
                 Statement::IfStatement(IfStatement {
@@ -243,25 +242,25 @@ mod test {
     #[test]
     fn if_special() {
         assert_eq!(
-            statement(&b"jika a benar {\n}"[..]),
-            statement(&b"jika a == benar {\n}"[..])
+            parse_statement(&b"jika a benar {\n}"[..]),
+            parse_statement(&b"jika a == benar {\n}"[..])
         );
 
         assert_eq!(
-            statement(&b"jika a salah {\n} atau {\n}"[..]),
-            statement(&b"jika a == salah {\n} atau {\n}"[..]),
+            parse_statement(&b"jika a salah {\n} atau {\n}"[..]),
+            parse_statement(&b"jika a == salah {\n} atau {\n}"[..]),
         );
 
         assert_eq!(
-            statement(&b"jika a kosong {\n}"[..]),
-            statement(&b"jika a == kosong {\n}"[..])
+            parse_statement(&b"jika a kosong {\n}"[..]),
+            parse_statement(&b"jika a == kosong {\n}"[..])
         );
     }
 
     #[test]
     fn recursive_if_else() {
         assert_eq!(
-            statement(&b"jika a benar {\n} atau jika b kosong {\n}"[..]),
+            parse_statement(&b"jika a benar {\n} atau jika b kosong {\n}"[..]),
             Ok((
                 &b""[..],
                 Statement::IfStatement(IfStatement {
@@ -289,7 +288,7 @@ mod test {
         );
 
         assert_eq!(
-            statement(&b"jika c == 2 {\n} atau jika d benar {\n} atau {\n}"[..]),
+            parse_statement(&b"jika c == 2 {\n} atau jika d benar {\n} atau {\n}"[..]),
             Ok((
                 &b""[..],
                 Statement::IfStatement(IfStatement {
@@ -322,7 +321,7 @@ mod test {
     #[test]
     fn simple_expression_statement() {
         assert_eq!(
-            statement(&b"alert()"[..]),
+            parse_statement(&b"alert()"[..]),
             Ok((
                 &b""[..],
                 Statement::Expression(Expression::CallExpression(CallExpression {
@@ -338,7 +337,7 @@ mod test {
     #[test]
     fn reassignment() {
         assert_eq!(
-            statement(&b"x = x ^ 5;"[..]),
+            parse_statement(&b"x = x ^ 5;"[..]),
             Ok((
                 &b";"[..],
                 Statement::Expression(Expression::Assignment(AssignmentExpression {

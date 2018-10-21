@@ -1,0 +1,9 @@
+[package]
+name = "naskah-demo"
+version = "0.1.0"
+authors = ["Fatih Kalifa <fatihkalifa@gmail.com>"]
+
+[dependencies]
+stdweb = "^0.4.9"
+yew = { git = "https://github.com/DenisKolodin/yew" }
+printer = { path = "../printer" }

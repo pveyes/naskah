@@ -9,3 +9,9 @@ matrix:
   allow_failures:
     - rust: nightly
   fast_finish: true
+
+script:
+  # we only need to build `printer` package because it's used in wasm context
+  # and includes all necessary packages for the compiler
+  - cargo build --verbose -p printer
+  - cargo test --verbose --all

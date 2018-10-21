@@ -1,4 +1,4 @@
-use ast::Identifier;
+use super::ast::Identifier;
 use std::str;
 
 named!(
