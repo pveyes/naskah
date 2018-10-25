@@ -77,6 +77,6 @@ ulang {
 }
 ```
 
-## License 
+## Lisensi 
 
-MIT
+Bahasa pemrograman Naskah terlisensi dibawah lisensi MIT.
