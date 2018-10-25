@@ -2,18 +2,23 @@
 extern crate yew;
 extern crate printer;
 extern crate stdweb;
+#[macro_use]
+extern crate serde_derive;
+
+pub mod worker;
 
 use printer::to_js;
-use stdweb::web::{document, IParentNode};
 use yew::prelude::*;
 
-struct Model {
+pub struct Model {
     code: String,
     transpiled: String,
+    worker: Box<Bridge<worker::Worker>>,
 }
 
-enum Msg {
+pub enum Msg {
     ChangeCode(String),
+    CompilationFinished(String),
 }
 
 const EXAMPLE_CODE: &str = "misal x = 2 + 2;
@@ -25,15 +30,19 @@ jika y benar {
 ";
 
 impl Component for Model {
-    // Some details omitted. Explore the examples to see more.
-
     type Message = Msg;
     type Properties = ();
 
-    fn create(_: Self::Properties, _: ComponentLink<Self>) -> Self {
+    fn create(_: Self::Properties, mut link: ComponentLink<Self>) -> Self {
+        let callback = link.send_back(|re| match re {
+            worker::Response::Compiled(t) => Msg::CompilationFinished(t),
+        });
+        let worker = worker::Worker::bridge(callback);
+
         Model {
             code: EXAMPLE_CODE.into(),
             transpiled: to_js(EXAMPLE_CODE.into()),
+            worker,
         }
     }
 
@@ -41,10 +50,13 @@ impl Component for Model {
         match msg {
             Msg::ChangeCode(code) => {
                 self.code = code.clone();
-                self.transpiled = to_js(code.clone());
-                true
+                self.worker.send(worker::Request::Compile(code));
             }
-        }
+            Msg::CompilationFinished(t) => {
+                self.transpiled = t;
+            }
+        };
+        true
     }
 }
 
@@ -67,12 +79,4 @@ impl Renderable<Model> for Model {
             </>
         }
     }
-}
-
-fn main() {
-    let element = document().query_selector("#playground").unwrap().unwrap();
-
-    yew::initialize();
-    App::<Model>::new().mount(element);
-    yew::run_loop();
 }

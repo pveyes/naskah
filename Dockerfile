@@ -7,4 +7,4 @@ RUN cargo install cargo-web
 COPY . .
 RUN ./scripts/build-demo.sh
 
-RUN mv ./demo/src/static /public
+RUN mv ./demo/static /public
