@@ -73,6 +73,8 @@ named!(
             | map!(tag!("^"), |_| Operator::Exponentiation)
             | map!(tag!("=="), |_| Operator::Equal)
             | map!(tag!("!="), |_| Operator::NotEqual)
+            | map!(tag!(">="), |_| Operator::GreaterThanOrEqualTo)
+            | map!(tag!("<="), |_| Operator::LessThanOrEqualTo)
             | map!(tag!(">"), |_| Operator::GreaterThan)
             | map!(tag!("<"), |_| Operator::LessThan)
     )
@@ -119,6 +121,8 @@ mod test {
         assert_eq!(operator(&b"!="[..]), Ok((&b""[..], Operator::NotEqual)));
         assert_eq!(operator(&b">"[..]), Ok((&b""[..], Operator::GreaterThan)));
         assert_eq!(operator(&b"<"[..]), Ok((&b""[..], Operator::LessThan)));
+        assert_eq!(operator(&b">="[..]), Ok((&b""[..], Operator::GreaterThanOrEqualTo)));
+        assert_eq!(operator(&b"<="[..]), Ok((&b""[..], Operator::LessThanOrEqualTo)));
     }
 
     #[test]
