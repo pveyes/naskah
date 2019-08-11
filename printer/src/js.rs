@@ -64,7 +64,7 @@ fn print_operator(op: Operator) -> String {
         Operator::Multiplication => String::from("*"),
         Operator::Division => String::from("/"),
         Operator::Remainder => String::from("%"),
-        Operator::Exponentiation => String::from("^"),
+        Operator::Exponentiation => String::from("**"),
         Operator::Equal => String::from("=="),
         Operator::NotEqual => String::from("!="),
         Operator::GreaterThan => String::from(">"),
