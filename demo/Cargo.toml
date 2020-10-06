@@ -3,9 +3,13 @@ name = "naskah-demo"
 version = "0.1.0"
 authors = ["Fatih Kalifa <fatihkalifa@gmail.com>"]
 
+[lib]
+crate-type = ["cdylib", "rlib"]
+
 [dependencies]
 serde = "^1.0.80"
 serde_derive = "^1.0.80"
-stdweb = "^0.4.9"
-yew = { git = "https://github.com/DenisKolodin/yew" }
+yew =  "0.17"
+web-sys = { version = "0.3.45", features = ['Window', 'Document', 'Element'] }
+wasm-bindgen = "0.2.67"
 printer = { path = "../printer" }
