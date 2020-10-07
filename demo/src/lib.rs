@@ -16,7 +16,6 @@ struct Model {
 
 enum Msg {
     ChangeCode(String),
-    CompilationFinished(String),
 }
 
 const EXAMPLE_CODE: &str = "misal x = 2 + 2;
@@ -44,7 +43,6 @@ impl Component for Model {
                 self.transpiled = to_js(v.clone().into());
                 self.code = v;
             }
-            Msg::CompilationFinished(result) => self.transpiled = result,
         }
         true
     }

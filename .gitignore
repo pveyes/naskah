@@ -5,3 +5,4 @@ fixtures/
 demo/static/worker/
 demo/static/main.js
 demo/static/main.wasm
+.vercel
