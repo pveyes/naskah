@@ -1,0 +1,9 @@
+{
+  "name": "naskah",
+  "version": 2,
+  "github": {
+    "enabled": false
+  },
+  "builds": [{ "src": "./demo/static/**", "use": "@now/static" }],
+  "routes": [{ "src": "/(.*)", "dest": "demo/static/$1" }]
+}
