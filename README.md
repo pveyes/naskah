@@ -2,31 +2,34 @@
 
 > Bahasa pemrograman dengan sintaks Bahasa Indonesia
 
-Demo: https://naskah.now.sh/
+Demo: https://naskah.vercel.app/
 
 ## Tipe data
 
 Saat ini hanya 4 tipe data yang didukung oleh naskah:
- - angka `123`
- - huruf `"hello"`
- - boolean `benar` / `salah`
- - kosong `kosong`
+
+- angka `123`
+- huruf `"hello"`
+- boolean `benar` / `salah`
+- kosong `kosong`
 
 ## Operator
 
 Operasi yang didukung oleh `naskah` adalah:
- - Penjumlahan `+`
- - Pengurangan `-`
- - Perkalian `*`
- - Pembagian `\`
- - Sisa pembagian `%`
- - Pangkat `^`
+
+- Penjumlahan `+`
+- Pengurangan `-`
+- Perkalian `*`
+- Pembagian `\`
+- Sisa pembagian `%`
+- Pangkat `^`
 
 Selain itu ada juga operasi untuk membandingkan dua variabel / tipe data
- - Sama dengan `==`
- - Tidak sama dengan `!=`
- - Lebih dari `>`
- - Kurang dari `<`
+
+- Sama dengan `==`
+- Tidak sama dengan `!=`
+- Lebih dari `>`
+- Kurang dari `<`
 
 ## Sintaks
 
@@ -41,7 +44,7 @@ misal y = x;
 
 ```
 jika x == 2 {
-  
+
 }
 
 jika x == kosong {
@@ -77,6 +80,6 @@ ulang {
 }
 ```
 
-## Lisensi 
+## Lisensi
 
 Bahasa pemrograman Naskah terlisensi dibawah lisensi MIT.
