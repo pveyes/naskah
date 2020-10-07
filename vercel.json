@@ -1,5 +1,6 @@
 {
   "name": "naskah",
+  "aliases": ["naskah"],
   "version": 2,
   "github": {
     "enabled": false
