@@ -18,13 +18,13 @@ mod test {
 
     #[test]
     fn ext_single() {
-        let js = to_js(String::from("misal x = null;\n"));
+        let js = to_js(String::from("variabel x = null;\n"));
         assert_eq!(js, String::from("var x = null;\n"));
     }
 
     #[test]
     fn ext_multi() {
-        let js = to_js(String::from("misal x = null;\nmisal y = benar;\n"));
+        let js = to_js(String::from("variabel x = null;\nvariabel y = benar;\n"));
         assert_eq!(js, String::from("var x = null;\nvar y = true;\n"));
     }
 }

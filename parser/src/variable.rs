@@ -4,7 +4,7 @@ use super::identifier::identifier;
 
 named!(
   pub variable_declaration<VariableDeclaration>,
-  preceded!(tag!("misal "), do_parse!(
+  preceded!(tag!("variabel "), do_parse!(
       id: identifier
       // we can do either x = 2 or x=2
       // both is fine
@@ -26,7 +26,7 @@ mod test {
     #[test]
     fn boolean_assignment() {
         assert_eq!(
-            variable_declaration(&b"misal x = benar;"[..]),
+            variable_declaration(&b"variabel x = benar;"[..]),
             Ok((
                 &b""[..],
                 VariableDeclaration {
@@ -42,7 +42,7 @@ mod test {
     #[test]
     fn string_assignment() {
         assert_eq!(
-            variable_declaration(&b"misal x = \"str\";"[..]),
+            variable_declaration(&b"variabel x = \"str\";"[..]),
             Ok((
                 &b""[..],
                 VariableDeclaration {
@@ -58,7 +58,7 @@ mod test {
     #[test]
     fn number_assignment() {
         assert_eq!(
-            variable_declaration(&b"misal x = 5;"[..]),
+            variable_declaration(&b"variabel x = 5;"[..]),
             Ok((
                 &b""[..],
                 VariableDeclaration {
@@ -74,7 +74,7 @@ mod test {
     #[test]
     fn null_assignment() {
         assert_eq!(
-            variable_declaration(&b"misal x = kosong;"[..]),
+            variable_declaration(&b"variabel x = kosong;"[..]),
             Ok((
                 &b""[..],
                 VariableDeclaration {
@@ -90,7 +90,7 @@ mod test {
     #[test]
     fn identifier_assignment() {
         assert_eq!(
-            variable_declaration(&b"misal x = a;"[..]),
+            variable_declaration(&b"variabel x = a;"[..]),
             Ok((
                 &b""[..],
                 VariableDeclaration {
@@ -108,7 +108,7 @@ mod test {
     #[test]
     fn binary_expression_assignment() {
         assert_eq!(
-            variable_declaration(&b"misal sum = 2 + 3;"[..]),
+            variable_declaration(&b"variabel sum = 2 + 3;"[..]),
             Ok((
                 &b""[..],
                 VariableDeclaration {
