@@ -18,8 +18,8 @@ enum Msg {
     ChangeCode(String),
 }
 
-const EXAMPLE_CODE: &str = "misal x = 2 + 2;
-misal y = x > 2;
+const EXAMPLE_CODE: &str = "variable x = 2 + 2;
+variable y = x > 2;
 jika y benar {
   x = x + 1;
   menang();
