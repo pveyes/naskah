@@ -37,8 +37,30 @@ fn print_literal(l: Literal) -> String {
     }
 }
 
+/// Words JavaScript will not take as the name of a variable. Naskah does not reserve
+/// them, so a program can use them, and they get a `$` on the end, which no Naskah
+/// name can contain.
+const JS_RESERVED: [&str; 46] = [
+    "break", "case", "catch", "class", "const", "continue", "debugger", "default", "delete", "do",
+    "else", "enum", "export", "extends", "false", "finally", "for", "function", "if", "import",
+    "in", "instanceof", "new", "null", "return", "super", "switch", "this", "throw", "true", "try",
+    "typeof", "var", "void", "while", "with", "yield", "let", "static", "implements", "interface",
+    "package", "private", "protected", "public", "await",
+];
+
+/// A name of the program as it is written in the JavaScript. Two leading underscores are
+/// kept for the helpers the playground supplies (`__tambah`, `__teks`, ...).
+fn safe_name(name: &str) -> String {
+    let reserved = JS_RESERVED.contains(&name) || name == "eval" || name == "arguments";
+    if reserved || name.starts_with("__") {
+        format!("{}$", name)
+    } else {
+        name.to_string()
+    }
+}
+
 fn print_identifier(i: Identifier) -> String {
-    i.name
+    safe_name(&i.name)
 }
 
 fn print_binary_expression(b: Box<BinaryExpression>) -> String {
@@ -168,20 +190,20 @@ fn print_operand(e: Expression, needs_parens: bool) -> String {
 }
 
 /// Naskah built-ins and the JavaScript they stand for.
-fn builtin(name: &str) -> &str {
+fn builtin(name: &str) -> String {
     match name {
-        "tulis" => "console.log",
-        "tanya" => "prompt",
-        "Galat" => "Error",
-        other => other,
+        "tulis" => String::from("console.log"),
+        "tanya" => String::from("prompt"),
+        "Galat" => String::from("Error"),
+        other => safe_name(other),
     }
 }
 
 /// Names that mean something else when used as a value rather than called.
-fn builtin_value(name: &str) -> &str {
+fn builtin_value(name: &str) -> String {
     match name {
-        "Galat" => "Error",
-        other => other,
+        "Galat" => String::from("Error"),
+        other => safe_name(other),
     }
 }
 
@@ -230,7 +252,7 @@ fn print_call_expression(c: CallExpression) -> String {
         Expression::Identifier(i) if i.name == "tulis" => {
             format!("{}{}{}{}", SITE_START, c.line, SITE_END, builtin(&i.name))
         }
-        Expression::Identifier(i) => builtin(&i.name).to_string(),
+        Expression::Identifier(i) => builtin(&i.name),
         other => {
             let parens = precedence(&other) < PREC_ATOM;
             print_operand(other, parens)
@@ -298,7 +320,7 @@ fn print_assignment_expression(s: AssignmentExpression) -> String {
 fn print_new_expression(n: Box<NewExpression>) -> String {
     let n = *n;
     let callee = match n.callee {
-        Expression::Identifier(i) => builtin(&i.name).to_string(),
+        Expression::Identifier(i) => builtin(&i.name),
         other => print_expression(other),
     };
     let arguments: Vec<String> = n.arguments.into_iter().map(print_expression).collect();
@@ -426,7 +448,7 @@ fn print_expression(e: Expression) -> String {
         Expression::BinaryExpression(b) => print_binary_expression(b),
         Expression::UnaryExpression(u) => print_unary_expression(u),
         Expression::CallExpression(c) => print_call_expression(c),
-        Expression::Identifier(i) => builtin_value(&i.name).to_string(),
+        Expression::Identifier(i) => builtin_value(&i.name),
         Expression::Member(m) => print_member_expression(m),
         Expression::Index(i) => print_index_expression(i),
         Expression::List(items) => print_list(items),
@@ -529,7 +551,7 @@ fn print_for_range_statement(f: ForRangeStatement, depth: u8) -> String {
         Some(Expression::UnaryExpression(u)) => u.operator == UnaryOperator::Negate,
         _ => false,
     };
-    let var = f.var.name;
+    let var = safe_name(&f.var.name);
     let update = match f.step {
         Some(step) => format!("{} += {}", var, expr_at(step, depth)),
         None => format!("{}++", var),
@@ -551,7 +573,7 @@ fn print_for_each_statement(f: ForEachStatement, depth: u8) -> String {
     format!(
         "{}for (let {} of {}) {}",
         insert_indent(depth),
-        f.var.name,
+        safe_name(&f.var.name),
         expr_at(f.iterable, depth),
         print_block_statement(f.body, depth)
     )
@@ -620,7 +642,7 @@ fn print_function_declaration(f: FunctionDeclaration, depth: u8) -> String {
     res.push_str(&format!(
         "{}function {}({}) ",
         if f.is_async { "async " } else { "" },
-        f.id.name,
+        safe_name(&f.id.name),
         print_params(f.params)
     ));
     res.push_str(&print_block_statement(f.body, depth));
@@ -639,7 +661,7 @@ fn print_class_declaration(c: ClassDeclaration, depth: u8) -> String {
         body.insert(
             0,
             Statement::Expression(Expression::CallExpression(CallExpression {
-                callee: Box::new(Expression::Identifier(Identifier { name: String::from("super") })),
+                callee: Box::new(Expression::Super),
                 arguments: parent.arguments,
                 line: 0,
             })),
@@ -681,7 +703,7 @@ fn print_try_statement(t: TryStatement, depth: u8) -> String {
     res.push_str(&print_block_statement(t.block, depth));
     if let Some(handler) = t.handler {
         match handler.param {
-            Some(param) => res.push_str(&format!(" catch ({}) ", param.name)),
+            Some(param) => res.push_str(&format!(" catch ({}) ", safe_name(&param.name))),
             None => res.push_str(" catch "),
         }
         res.push_str(&print_block_statement(handler.body, depth));

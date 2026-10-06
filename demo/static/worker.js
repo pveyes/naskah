@@ -48,8 +48,10 @@ const NAMES = {
   "console.log": "tulis",
   prompt: "tanya",
 };
+// a name that is a JavaScript word has a `$` on the end, which no Naskah name can contain
 const indo = (name) =>
   String(name)
+    .replace(/([A-Za-z0-9_])\$(?![\w$])/g, "$1")
     .replace(/console\.log/g, "tulis")
     .replace(/\(intermediate value\)/g, "sesuatu")
     // `.nama` and `..nama` are how Naskah writes this.nama and super.nama
@@ -70,10 +72,10 @@ const q = (name) => "`" + indo(name) + "`";
 
 // What the JavaScript engine said (Chrome's wording) and what to tell a child instead.
 const RULES = [
-  [/^(.+) is not defined$/, (m) => q(m[1]) + " belum dibuat. Buat dulu dengan misal " + m[1] + " = ..."],
+  [/^(.+) is not defined$/, (m) => q(m[1]) + " belum dibuat. Buat dulu dengan misal " + indo(m[1]) + " = ..."],
   [
     /^Cannot access '(.+)' before initialization$/,
-    (m) => q(m[1]) + " dipakai sebelum dibuat. Tulis misal " + m[1] + " = ... di atasnya."
+    (m) => q(m[1]) + " dipakai sebelum dibuat. Tulis misal " + indo(m[1]) + " = ... di atasnya."
   ],
   [
     /^Cannot read propert(?:y|ies) of (?:undefined|null) \(reading '(.+)'\)$/,

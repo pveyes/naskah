@@ -14,6 +14,8 @@ pub struct Transpiled {
     /// `(js_line, naskah_line)` for the first JS line of every statement, so a
     /// runtime error can be traced back to the line that was written.
     pub statement_lines: Vec<(usize, usize)>,
+    /// What is wrong with the program, if anything. `js` then holds a comment saying so.
+    pub error: Option<ParseError>,
 }
 
 pub fn transpile(s: &str) -> Transpiled {
@@ -33,6 +35,7 @@ fn transpile_with(s: &str, read: fn(&str) -> Result<Program, ParseError>) -> Tra
             js: format!("// Salah sintaks di {}", e),
             call_sites: vec![],
             statement_lines: vec![],
+            error: Some(e),
         },
     }
 }
@@ -73,7 +76,7 @@ fn extract_call_sites(marked: &str) -> Transpiled {
         js.push_str(rest);
     }
 
-    Transpiled { js, call_sites, statement_lines }
+    Transpiled { js, call_sites, statement_lines, error: None }
 }
 
 #[cfg(test)]
@@ -82,13 +85,13 @@ mod test {
 
     #[test]
     fn ext_single() {
-        let js = to_js(String::from("misal x = null;\n"));
+        let js = to_js(String::from("misal x = kosong;\n"));
         assert_eq!(js, String::from("let x = null;\n"));
     }
 
     #[test]
     fn ext_multi() {
-        let js = to_js(String::from("misal x = null;\nmisal y = benar;\n"));
+        let js = to_js(String::from("misal x = kosong;\nmisal y = benar;\n"));
         assert_eq!(js, String::from("let x = null;\nlet y = true;\n"));
     }
 
@@ -501,6 +504,45 @@ let k = new Kucing(\"Tom\");
         );
         // the switch is one statement, the cases inside it are real ones
         assert_eq!(t.statement_lines, vec![(1, 1), (4, 3), (7, 6), (8, 7)]);
+    }
+
+    #[test]
+    fn a_mistake_is_kept_as_data() {
+        let t = transpile("misal x = ;");
+        let e = t.error.expect("a mistake");
+        assert_eq!((e.line, e.col), (1, 11));
+        assert!(e.message.starts_with("ekspresi tidak lengkap"));
+        assert!(transpile("misal x = 1").error.is_none());
+        assert!(transpile_checked("tulis(nmaa)").error.is_some());
+    }
+
+    #[test]
+    fn javascript_reserved_words_are_safe_names() {
+        assert_eq!(
+            js("misal delete = 1\nmisal new = 2\ntulis(delete * new)"),
+            "let delete$ = 1;\nlet new$ = 2;\nconsole.log(delete$ * new$);\n"
+        );
+        assert_eq!(
+            js("fungsi default(class) {\nhasilkan class\n}\ndefault(1)"),
+            "function default$(class$) {\n  return class$;\n}\ndefault$(1);\n"
+        );
+        assert_eq!(js("untuk in dari 1 sampai 3 {\n}"), "for (let in$ = 1; in$ <= 3; in$++) {\n}\n");
+        assert_eq!(js("untuk setiap with dalam xs {\n}"), "for (let with$ of xs) {\n}\n");
+        assert_eq!(js("coba {\n} tangkap catch {\n}"), "try {\n} catch (catch$) {\n}\n");
+        assert_eq!(js("misal f = fungsi (this) { hasilkan this }"), "let f = (this$) => {\n  return this$;\n};\n");
+        // inside texts too
+        assert_eq!(js("misal if = 1\nmisal s = \"{if}\""), "let if$ = 1;\nlet s = `${__teks(if$)}`;\n");
+        // property names, methods and object keys may be reserved words in JavaScript
+        assert_eq!(js("x = o.delete\no.default = 1"), "x = o.delete;\no.default = 1;\n");
+        assert_eq!(js("misal o = { class: 1 }"), "let o = { class: 1 };\n");
+        assert_eq!(
+            js("Hewan() {\ndelete() {\n}\n}"),
+            "class Hewan {\n  delete() {\n  }\n}\n"
+        );
+        // two leading underscores are for the helpers, so they could not be shadowed
+        assert_eq!(js("misal __teks = 1\n__teks = 2"), "let __teks$ = 1;\n__teks$ = 2;\n");
+        // the names the program normally uses are untouched
+        assert_eq!(js("misal letak = 1\nmisal baru = letak"), "let letak = 1;\nlet baru = letak;\n");
     }
 
     #[test]
