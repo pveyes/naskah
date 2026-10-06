@@ -23,6 +23,7 @@ These were decided together with the project owner. Follow them, and ask before 
 - **Semicolons are optional.** A line break, `}` or the end of the code ends a statement; a token that starts a line never continues the previous line.
 - **`.nama` is the current object and `..nama` is the parent's version.** Both only inside classes.
 - **A function is async when its body uses `tunggu`.** There is no `async` marker.
+- JavaScript reserved words are fine as Naskah names (`misal delete = 1`): the printer writes them with a `$` on the end, and so for names starting with `__`. Property names, methods and object keys are left alone.
 - Keep the vocabulary small. Prefer one obvious way to do a thing.
 
 ## Known gaps
@@ -33,7 +34,6 @@ Things that break the rules above today. Fix them rather than copying them.
 - Runtime-error explanations match Chrome's wording. Other browsers fall back to a generic Indonesian sentence about the kind of error, which is safe but less specific.
 - Built-ins that are still English: `Math`, `Date`, `JSON`, `Promise`, the string and number methods. They are allowed by `GLOBALS` in `parser/src/syntax.rs` so nothing breaks, but they need Indonesian names.
 - `.gabung(",")` and other JavaScript methods still turn numbers into text with a dot.
-- JavaScript reserved words are not escaped, so `misal delete = 1` produces invalid JavaScript.
 - The JavaScript pane toggle and its teachers' section are the only places that say "JavaScript"; keep it that way.
 
 ## How the pieces fit
@@ -42,6 +42,7 @@ Things that break the rules above today. Fix them rather than copying them.
 - `printer/` turns the AST into readable JavaScript, one statement per line, and returns two `(js_line, naskah_line)` maps: one for `tulis` calls and one for every statement. The playground's line labels, hover highlight and runtime-error lines all rely on that one-statement-per-line output, which is why the JS must never be minified.
 - The generated JS calls a few helpers that the playground's worker provides: `__tambah` (`+` that joins text with Indonesian numbers), `__teks` (a value in a text) and `__pesan` (an error's message, explained in Indonesian). They are not defined anywhere else, so the JS is not standalone.
 - `demo/` is the playground: a Yew (Rust to wasm) app in `demo/src`, plus the static site in `demo/static`. `console.js` runs the generated JS in a Web Worker (`worker.js`) with a time limit. `worker.js` also turns JavaScript's own errors into Indonesian and finds the Naskah line they came from.
+- `demo/static/belajar.html` is the tutorial for children: eleven lessons shown one page at a time by `belajar.js`, each example with a Jalankan button (it uses the same `runner.js` and the wasm exports `compile_program` and `highlight_html` as the playground). The HTML is the source of truth. A test in `demo/src/lib.rs` compiles every `<pre class="naskah">` example, so a lesson cannot contain code that does not work. An example that shows a mistake on purpose carries `data-salah` (a mistake in the writing) or `data-galat` (only fails while running). Write lessons the way the page speaks: short Indonesian sentences and no English words. The playground is called "Tempat Coba" for children.
 - `SYNTAX.md` is the language reference for users and is written in Indonesian. Update it with every language change, together with the vocabulary table in `demo/static/index.html`, the highlighter in `demo/src/highlight.rs`, and the tests.
 
 ## Working in the repo

@@ -124,6 +124,300 @@ a {
   color: var(--muted);
 }
 
+/* Navigation in the header */
+.top nav {
+  display: flex;
+  gap: 24px;
+}
+
+a.wordmark {
+  color: inherit;
+  text-decoration: none;
+}
+
+.hero p a {
+  color: var(--ink);
+  text-underline-offset: 4px;
+}
+
+/* The tutorial */
+body.belajar .page {
+  max-width: 780px;
+}
+
+body.belajar .hero p {
+  max-width: 56ch;
+}
+
+body.belajar .hero {
+  padding: 24px 0 8px;
+}
+
+body.belajar .hero h1 {
+  font-size: clamp(2.5rem, 7vw, 4rem);
+}
+
+body.belajar .hero p {
+  margin-top: 16px;
+}
+
+.toc {
+  margin: 8px 0 72px;
+  padding: 24px 28px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+}
+
+.toc h2 {
+  margin: 0 0 12px;
+  font-family: var(--display);
+  font-size: 1.5rem;
+  font-weight: 400;
+}
+
+.toc ol {
+  margin: 0;
+  padding-left: 1.4rem;
+  line-height: 2;
+}
+
+.toc a {
+  color: var(--ink);
+  text-underline-offset: 4px;
+}
+
+.lesson {
+  padding: 56px 0 8px;
+  border-top: 1px solid var(--line);
+}
+
+.lesson h2 {
+  margin: 0 0 20px;
+  font-family: var(--display);
+  font-size: clamp(1.75rem, 4vw, 2.5rem);
+  font-weight: 400;
+  line-height: 1.15;
+}
+
+.lesson p {
+  max-width: 62ch;
+  margin: 0 0 18px;
+  font-size: 1.125rem;
+  line-height: 1.75;
+}
+
+.lesson code {
+  padding: 1px 6px;
+  border-radius: 6px;
+  background: var(--surface-bar);
+  font-family: var(--mono);
+  font-size: 0.9em;
+  font-variant-ligatures: none;
+}
+
+.example {
+  margin: 0 0 28px;
+}
+
+.example .code {
+  margin: 0;
+  padding: 18px 20px;
+  overflow-x: auto;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 14px 14px 0 0;
+  font-family: var(--mono);
+  font-size: 0.95rem;
+  line-height: 1.7;
+  font-variant-ligatures: none;
+}
+
+/* the code inside an example is already coloured, so it needs no chip behind it */
+.example .code code {
+  padding: 0;
+  background: none;
+  font-size: inherit;
+}
+
+.example-bar {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 10px 14px;
+  background: var(--surface-bar);
+  border: 1px solid var(--line);
+  border-top: 0;
+  border-radius: 0 0 14px 14px;
+}
+
+.run-button {
+  padding: 7px 20px;
+  border: 1px solid var(--ink);
+  border-radius: 999px;
+  background: var(--ink);
+  color: var(--bg);
+  font: inherit;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.run-button:hover {
+  background: var(--tok-keyword);
+  border-color: var(--tok-keyword);
+}
+
+.edit-link {
+  color: var(--muted);
+  font-size: 0.9rem;
+  text-underline-offset: 4px;
+}
+
+.edit-link:hover {
+  color: var(--ink);
+}
+
+.example .console {
+  margin-top: 12px;
+}
+
+.example .console-output {
+  min-height: 0;
+  max-height: 260px;
+}
+
+.coba {
+  margin: 28px 0 0;
+  padding: 16px 22px;
+  border-left: 3px solid var(--focus);
+  background: color-mix(in srgb, var(--focus) 9%, transparent);
+  border-radius: 0 10px 10px 0;
+}
+
+.coba h3 {
+  margin: 0 0 6px;
+  font-size: 1rem;
+}
+
+.coba ul {
+  margin: 0;
+  padding-left: 1.2rem;
+  font-size: 1.05rem;
+  line-height: 1.8;
+}
+
+.next {
+  margin: 72px 0 0;
+  padding-top: 32px;
+  border-top: 1px solid var(--line);
+  font-size: 1.125rem;
+}
+
+.next a {
+  color: var(--ink);
+  text-underline-offset: 4px;
+}
+
+/* One lesson at a time */
+.paged .lesson {
+  display: none;
+  padding-top: 8px;
+  border-top: 0;
+}
+
+.paged .lesson.current {
+  display: block;
+}
+
+.paged .home,
+.paged .next {
+  display: none;
+}
+
+.paged.home-view .home {
+  display: block;
+}
+
+/* the heading takes focus when a lesson opens so screen readers announce it; it is not a control */
+.lesson h2:focus {
+  outline: none;
+}
+
+.lesson-back {
+  display: inline-block;
+  margin-bottom: 16px;
+  color: var(--muted);
+  font-size: 0.95rem;
+  text-underline-offset: 4px;
+}
+
+.lesson-back:hover {
+  color: var(--ink);
+}
+
+.lesson-where {
+  margin: 0 0 8px !important;
+  color: var(--muted);
+  font-size: 0.95rem !important;
+}
+
+.progress {
+  height: 6px;
+  margin: 0 0 32px;
+  overflow: hidden;
+  background: var(--line);
+  border-radius: 3px;
+}
+
+.progress span {
+  display: block;
+  height: 100%;
+  background: var(--tok-keyword);
+  border-radius: 3px;
+}
+
+.lesson-nav {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 48px 0 80px;
+  padding-top: 24px;
+  border-top: 1px solid var(--line);
+}
+
+.lesson-nav a {
+  padding: 10px 24px;
+  border: 1px solid var(--ink);
+  border-radius: 999px;
+  color: var(--ink);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.lesson-nav a:hover {
+  border-color: var(--tok-keyword);
+  color: var(--tok-keyword);
+}
+
+.lesson-nav a.primary {
+  background: var(--ink);
+  color: var(--bg);
+}
+
+.lesson-nav a.primary:hover {
+  background: var(--tok-keyword);
+  border-color: var(--tok-keyword);
+  color: var(--bg);
+}
+
+.toc li.done a::after {
+  content: " \2713";
+  color: var(--tok-string);
+  font-weight: 600;
+}
+
 /* Playground */
 .playground-tools {
   display: flex;

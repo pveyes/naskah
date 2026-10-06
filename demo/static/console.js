@@ -2,14 +2,14 @@
 // what it logs. A worker has no DOM access and can be killed, so an infinite
 // `ulang { }` never freezes the page.
 
-const TIME_LIMIT_MS = 2000;
+import { parseMap, runProgram, TIME_LIMIT_MS } from "./runner.js";
+
 const DEBOUNCE_MS = 300;
 
 const output = document.getElementById("console-output");
 const status = document.getElementById("console-status");
 
-let worker = null;
-let timer = null;
+let stopProgram = null;
 let runId = 0;
 
 function clear() {
@@ -106,38 +106,14 @@ function hideBand() {
   bands.replaceChildren();
 }
 
-// The page holds "sites|lines", each a list like "3:12,7:20" of JS line : Naskah line.
-// sites are the tulis(...) calls and lines are the first JS line of every statement.
-function readMaps() {
-  const [sitesText = "", linesText = ""] = (document.getElementById("sourcemap")?.textContent ?? "").split("|");
-  const parse = (text) =>
-    text
-      .split(",")
-      .map((pair) => pair.split(":").map(Number))
-      .filter(([jsLine, naskahLine]) => jsLine && naskahLine);
-  return { sites: new Map(parse(sitesText)), lines: parse(linesText) };
-}
-
-// Route each tulis(...) through __log(naskahLine, ...) so a log line knows where it came from.
-function instrument(js, sites) {
-  return js
-    .split("\n")
-    .map((text, index) => {
-      const naskahLine = sites.get(index + 1);
-      return naskahLine ? text.replace("console.log(", "__log(" + naskahLine + ", ") : text;
-    })
-    .join("\n");
-}
-
 function placeholder(text) {
   clear();
   addLine("note", text);
 }
 
 function stop() {
-  if (worker) worker.terminate();
-  worker = null;
-  clearTimeout(timer);
+  if (stopProgram) stopProgram();
+  stopProgram = null;
 }
 
 function run(js) {
@@ -146,43 +122,37 @@ function run(js) {
   clear();
   status.textContent = "Menjalankan…";
 
-  worker = new Worker(new URL("./worker.js", import.meta.url), { type: "module" });
-  const current = worker;
   let printed = 0;
+  const { sites, lines } = parseMap(document.getElementById("sourcemap")?.textContent ?? "");
 
-  timer = setTimeout(() => {
-    if (id !== runId) return;
-    stop();
-    addLine("error", "Dihentikan: kode berjalan lebih dari " + TIME_LIMIT_MS / 1000 + " detik.");
-    status.textContent = "Dihentikan";
-  }, TIME_LIMIT_MS);
-
-  current.onmessage = (event) => {
-    if (id !== runId) return;
-    const msg = event.data;
-    if (msg.type === "line") {
-      printed += 1;
-      addLine(msg.level, msg.text, msg.line);
-      output.scrollTop = output.scrollHeight;
-    } else if (msg.type === "done") {
-      clearTimeout(timer);
-      if (printed === 0) {
-        placeholder("Tidak ada keluaran. Gunakan tulis(...) untuk mencetak.");
+  stopProgram = runProgram(
+    { js, sites, lines },
+    {
+      line(msg) {
+        if (id !== runId) return;
+        printed += 1;
+        addLine(msg.level, msg.text, msg.line);
+        output.scrollTop = output.scrollHeight;
+      },
+      done(msg) {
+        if (id !== runId) return;
+        if (printed === 0) {
+          placeholder("Tidak ada keluaran. Gunakan tulis(...) untuk mencetak.");
+        }
+        status.textContent = "Selesai dalam " + Math.max(1, Math.round(msg.ms)) + " ms";
+      },
+      timeout() {
+        if (id !== runId) return;
+        addLine("error", "Dihentikan: kode berjalan lebih dari " + TIME_LIMIT_MS / 1000 + " detik.");
+        status.textContent = "Dihentikan";
+      },
+      crash(message) {
+        if (id !== runId) return;
+        addLine("error", "Galat: " + message);
+        status.textContent = "Galat";
       }
-      status.textContent = "Selesai dalam " + Math.max(1, Math.round(msg.ms)) + " ms";
     }
-  };
-  current.onerror = (event) => {
-    if (id !== runId) return;
-    event.preventDefault();
-    addLine("error", "Galat: " + event.message);
-    status.textContent = "Galat";
-  };
-  const { sites, lines } = readMaps();
-  current.postMessage({
-    code: instrument(js, sites),
-    lines
-  });
+  );
 }
 
 function update() {
@@ -212,6 +182,22 @@ const schedule = () => {
   clearTimeout(pending);
   pending = setTimeout(update, DEBOUNCE_MS);
 };
+
+// A link can open the playground with a program already in the editor: /#kode=...
+// The editor is made by wasm a moment after this script runs, so wait for it.
+function loadFromLink(tries = 100) {
+  const code = new URLSearchParams(location.hash.slice(1)).get("kode");
+  if (code === null) return;
+  const box = document.querySelector("#playground textarea");
+  if (!box) {
+    if (tries > 0) setTimeout(() => loadFromLink(tries - 1), 50);
+    return;
+  }
+  box.value = code;
+  box.dispatchEvent(new Event("input", { bubbles: true }));
+}
+loadFromLink();
+window.addEventListener("hashchange", () => loadFromLink());
 
 // The generated JavaScript is hidden unless asked for.
 const playground = document.getElementById("playground");

@@ -6,7 +6,7 @@
     <title>Naskah - Bahasa pemrograman dengan sintaks Bahasa Indonesia</title>
     <meta
       name="description"
-      content="Naskah adalah bahasa pemrograman dengan sintaks Bahasa Indonesia. Coba langsung di browser."
+      content="Naskah adalah bahasa pemrograman dengan sintaks Bahasa Indonesia. Coba langsung di peramban."
     />
     <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="./apple-touch-icon.png" />
@@ -23,7 +23,10 @@
     <div class="page">
       <header class="top">
         <span class="wordmark">naskah</span>
-        <a class="top-link" href="https://github.com/pveyes/naskah">GitHub</a>
+        <nav>
+          <a class="top-link" href="./belajar.html">Belajar</a>
+          <a class="top-link" href="https://github.com/pveyes/naskah">GitHub</a>
+        </nav>
       </header>
 
       <main>
@@ -31,7 +34,8 @@
           <h1>Tulis kode dalam Bahasa Indonesia.</h1>
           <p>
             Tulis kode di kotak Naskah, lalu lihat hasilnya di Keluaran.
-            Semuanya langsung jalan di browser.
+            Semuanya langsung jalan di sini. Baru mulai?
+            <a href="./belajar.html">Belajar Naskah langkah demi langkah</a>.
           </p>
         </section>
 
@@ -39,7 +43,7 @@
           <button type="button" class="js-toggle" id="js-toggle" aria-pressed="false">Lihat JavaScript</button>
         </div>
         <div class="playground-wrap">
-          <section class="playground" id="playground" data-js="hidden" aria-label="Playground"></section>
+          <section class="playground" id="playground" data-js="hidden" aria-label="Tempat Coba"></section>
           <div class="line-bands" id="line-bands" aria-hidden="true"></div>
         </div>
 
@@ -51,7 +55,7 @@
           <div class="console-output" id="console-output" role="log" aria-live="polite"></div>
         </section>
 
-        <section class="vocab">
+        <section class="vocab" id="kosakata">
           <h2>Kosakata</h2>
           <div class="vocab-body">
             <div class="vocab-tables">

@@ -1,6 +1,6 @@
 # Sintaks Naskah
 
-Naskah ditulis dalam Bahasa Indonesia dan diterjemahkan ke JavaScript. Dokumen ini menjelaskan seluruh sintaksnya. Untuk gambaran singkat, lihat [README](README.md), dan untuk mencobanya langsung, buka playground di browser.
+Naskah ditulis dalam Bahasa Indonesia dan diterjemahkan ke JavaScript. Dokumen ini menjelaskan seluruh sintaksnya. Untuk gambaran singkat, lihat [README](README.md). Untuk belajar dari awal, ada pelajaran bergambar contoh di halaman Belajar, dan untuk mencobanya langsung, buka Tempat Coba di peramban.
 
 - [Tipe data](#tipe-data)
 - [Operator](#operator)

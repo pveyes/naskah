@@ -1,0 +1,366 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Belajar Naskah - Pelajaran pemrograman dalam Bahasa Indonesia</title>
+    <meta
+      name="description"
+      content="Belajar membuat program dengan Naskah, langkah demi langkah dan seluruhnya dalam Bahasa Indonesia."
+    />
+    <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="./apple-touch-icon.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600&family=IM+Fell+English&family=JetBrains+Mono:wght@400;500&display=swap"
+    />
+    <link rel="stylesheet" type="text/css" href="./style.css" />
+  </head>
+
+  <body class="belajar">
+    <div class="page">
+      <header class="top">
+        <a class="wordmark" href="./">naskah</a>
+        <nav>
+          <a class="top-link" href="./">Tempat Coba</a>
+          <a class="top-link" href="https://github.com/pveyes/naskah">GitHub</a>
+        </nav>
+      </header>
+
+      <main>
+        <div class="home">
+        <section class="hero">
+          <h1>Belajar Naskah</h1>
+          <p>
+            Naskah adalah cara menulis perintah untuk komputer dalam Bahasa Indonesia.
+            Kamu belajar langkah demi langkah, dan tidak perlu bisa bahasa Inggris.
+            Tekan <strong>Jalankan</strong> pada setiap contoh untuk melihat hasilnya.
+          </p>
+        </section>
+
+        <nav class="toc" aria-label="Daftar pelajaran">
+          <h2>Daftar pelajaran</h2>
+          <ol><li><a href="#pelajaran-1">Halo, dunia!</a></li><li><a href="#pelajaran-2">Menyimpan nilai</a></li><li><a href="#pelajaran-3">Berhitung</a></li><li><a href="#pelajaran-4">Mengambil keputusan</a></li><li><a href="#pelajaran-5">Mengulang</a></li><li><a href="#pelajaran-6">Daftar</a></li><li><a href="#pelajaran-7">Membuat perintah sendiri</a></li><li><a href="#pelajaran-8">Benda dan cetakan</a></li><li><a href="#pelajaran-9">Kalau ada yang salah</a></li><li><a href="#pelajaran-10">Proyek kecil</a></li><li><a href="#pelajaran-11">Lanjutan: menunggu</a></li></ol>
+        </nav>
+        </div>
+
+        <section class="lesson" id="pelajaran-1">
+          <h2>1. Halo, dunia!</h2>
+          <p>Program adalah daftar perintah untuk komputer. Komputer mengerjakannya satu per satu, dari atas ke bawah.</p>
+          <p>Perintah pertama kita adalah <code>tulis</code>. Ia menampilkan sesuatu di Keluaran.</p>
+          <pre class="naskah">tulis("Halo, dunia!")</pre>
+          <p>Tulisan ditaruh di antara tanda kutip. Kita boleh memakai <code>tulis</code> berkali-kali.</p>
+          <pre class="naskah">tulis("Namaku Naskah.")
+tulis("Aku suka belajar.")
+tulis("Kamu juga, kan?")</pre>
+          <p>Dua garis miring <code>//</code> dipakai untuk catatan. Komputer tidak membacanya, jadi catatan hanya untuk manusia.</p>
+          <pre class="naskah">// Ini catatan untuk manusia
+tulis("Halo!") // ini juga catatan</pre>
+          <div class="coba"><h3>Coba sendiri</h3><ul><li>Ganti tulisan di dalam tanda kutip dengan namamu.</li><li>Tambahkan satu <code>tulis</code> lagi di bawahnya.</li></ul></div>
+        </section>
+
+        <section class="lesson" id="pelajaran-2">
+          <h2>2. Menyimpan nilai</h2>
+          <p>Kadang kita ingin mengingat sesuatu. Untuk itu ada <strong>variabel</strong>, yaitu kotak kecil yang diberi nama. Kita membuatnya dengan <code>misal</code>.</p>
+          <pre class="naskah">misal nama = "Budi"
+misal umur = 9
+tulis(nama)
+tulis(umur)</pre>
+          <p>Isi kotak bisa dimasukkan ke dalam tulisan dengan kurung kurawal <code>{ }</code>.</p>
+          <pre class="naskah">misal nama = "Budi"
+misal umur = 9
+tulis("Halo, {nama}!")
+tulis("Umurmu {umur} tahun.")</pre>
+          <p>Isi kotak boleh diganti. Tulis namanya lagi, tanpa <code>misal</code>.</p>
+          <pre class="naskah">misal skor = 0
+tulis("Skor: {skor}")
+skor = 10
+tulis("Skor sekarang: {skor}")</pre>
+          <p>Kalau isinya tidak boleh berubah, pakai <code>konstan</code>. Di Indonesia angka desimal ditulis dengan koma, dan di Naskah juga: <code>3,14</code>.</p>
+          <pre class="naskah">konstan pi = 3,14
+tulis("Pi kira-kira {pi}")</pre>
+          <p>Nama kotak diawali huruf kecil, misalnya <code>skor</code> atau <code>namaTeman</code>.</p>
+          <div class="coba"><h3>Coba sendiri</h3><ul><li>Ganti isi <code>nama</code> dan <code>umur</code> dengan datamu.</li><li>Buat kotak baru bernama <code>hobi</code>, lalu tulis isinya.</li></ul></div>
+        </section>
+
+        <section class="lesson" id="pelajaran-3">
+          <h2>3. Berhitung</h2>
+          <p>Komputer pandai berhitung. Tanda <code>+</code> artinya tambah, <code>-</code> kurang, <code>*</code> kali, dan <code>/</code> bagi.</p>
+          <pre class="naskah">tulis(5 + 3)
+tulis(10 - 4)
+tulis(6 * 7)
+tulis(20 / 4)</pre>
+          <p>Ada dua tanda lagi: <code>%</code> untuk sisa bagi dan <code>^</code> untuk pangkat.</p>
+          <pre class="naskah">tulis(17 % 5)
+tulis(2 ^ 10)</pre>
+          <p>Komputer mengerjakan kali dan bagi lebih dulu daripada tambah dan kurang, sama seperti di sekolah. Pakai kurung untuk mengubah urutannya.</p>
+          <pre class="naskah">tulis(2 + 3 * 4)
+tulis((2 + 3) * 4)</pre>
+          <p>Kita juga bisa berhitung dengan isi kotak.</p>
+          <pre class="naskah">misal panjang = 8
+misal lebar = 5
+misal luas = panjang * lebar
+tulis("Luasnya {luas}")</pre>
+          <p>Angka desimal memakai koma, dan tulisan bisa disambung dengan <code>+</code>.</p>
+          <pre class="naskah">tulis(10 / 4)
+tulis(7,5 * 2)
+tulis("Tinggiku " + 1,35 + " meter")</pre>
+          <div class="coba"><h3>Coba sendiri</h3><ul><li>Hitung luas lingkaran berjari-jari 5: <code>3,14 * 5 * 5</code>.</li><li>Ubah <code>panjang</code> dan <code>lebar</code>, lalu lihat luasnya.</li></ul></div>
+        </section>
+
+        <section class="lesson" id="pelajaran-4">
+          <h2>4. Mengambil keputusan</h2>
+          <p>Komputer bisa memilih apa yang dikerjakan. Ia memeriksa sebuah syarat di sebelah <code>jika</code>. Kalau benar, ia mengerjakan isi pertama. Kalau tidak, ia mengerjakan isi <code>lain</code>.</p>
+          <pre class="naskah">misal nilai = 80
+jika nilai &gt;= 75 {
+  tulis("Lulus!")
+} lain {
+  tulis("Belajar lagi, ya.")
+}</pre>
+          <p>Ini tanda-tanda untuk membandingkan: <code>==</code> sama dengan, <code>!=</code> tidak sama dengan, <code>&lt;</code> kurang dari, <code>&gt;</code> lebih dari, <code>&lt;=</code> kurang dari atau sama dengan, dan <code>&gt;=</code> lebih dari atau sama dengan. Hati-hati: sama dengan memakai dua tanda sama dengan.</p>
+          <p>Syarat bisa digabung dengan <code>dan</code>, <code>atau</code>, dan <code>bukan</code>.</p>
+          <pre class="naskah">misal hari = "Sabtu"
+jika hari == "Sabtu" atau hari == "Minggu" {
+  tulis("Hore, libur!")
+} lain {
+  tulis("Ayo sekolah.")
+}</pre>
+          <pre class="naskah">misal umur = 10
+jika umur &gt;= 7 dan umur &lt;= 12 {
+  tulis("Kamu anak SD.")
+}</pre>
+          <p>Kalau pilihannya lebih dari dua, pakai <code>lain jika</code>.</p>
+          <pre class="naskah">misal nilai = 85
+jika nilai &gt;= 90 {
+  tulis("Hebat sekali!")
+} lain jika nilai &gt;= 75 {
+  tulis("Bagus!")
+} lain {
+  tulis("Ayo belajar lagi.")
+}</pre>
+          <div class="coba"><h3>Coba sendiri</h3><ul><li>Ubah <code>nilai</code> menjadi 95, lalu 60, dan lihat jawabannya.</li><li>Ganti <code>hari</code> dengan hari ini.</li></ul></div>
+        </section>
+
+        <section class="lesson" id="pelajaran-5">
+          <h2>5. Mengulang</h2>
+          <p>Komputer tidak pernah bosan. Kita bisa menyuruhnya mengulang. Cara pertama adalah mengulang dengan hitungan: <code>untuk</code>.</p>
+          <pre class="naskah">untuk i dari 1 sampai 5 {
+  tulis("Putaran ke-{i}")
+}</pre>
+          <p>Nilai <code>sampai</code> ikut dihitung, jadi dari 1 sampai 5 ada lima putaran. Mari buat tabel perkalian 7.</p>
+          <pre class="naskah">untuk i dari 1 sampai 10 {
+  tulis("7 x {i} = {7 * i}")
+}</pre>
+          <p>Untuk menghitung mundur, tambahkan <code>langkah</code> dengan angka negatif.</p>
+          <pre class="naskah">untuk i dari 5 sampai 1 langkah -1 {
+  tulis(i)
+}
+tulis("Selesai!")</pre>
+          <p>Cara kedua adalah <code>selama</code>: mengulang selama syaratnya masih benar.</p>
+          <pre class="naskah">misal angka = 1
+selama angka &lt;= 5 {
+  tulis(angka)
+  angka = angka + 1
+}</pre>
+          <p>Hati-hati! Kalau lupa mengubah <code>angka</code>, syaratnya tidak pernah menjadi salah dan ulangannya tidak pernah selesai. Di sini, program yang berjalan lebih dari 2 detik akan dihentikan.</p>
+          <div class="coba"><h3>Coba sendiri</h3><ul><li>Buat tabel perkalian 5.</li><li>Hitung mundur dari 10.</li></ul></div>
+        </section>
+
+        <section class="lesson" id="pelajaran-6">
+          <h2>6. Daftar</h2>
+          <p>Daftar menyimpan banyak nilai sekaligus. Ia ditulis dengan kurung siku, nilainya dipisah koma dan spasi.</p>
+          <pre class="naskah">misal buah = ["apel", "jeruk", "mangga"]
+tulis(buah)
+tulis(buah.panjang)
+tulis(buah[0])</pre>
+          <p><code>panjang</code> adalah banyaknya isi daftar. Nomor urutan mulai dari 0, jadi <code>buah[0]</code> adalah isi yang pertama.</p>
+          <p>Untuk menambah isi, pakai <code>tambah</code>. Untuk mengerjakan sesuatu pada setiap isi, pakai <code>untuk setiap</code>.</p>
+          <pre class="naskah">misal buah = ["apel", "jeruk"]
+buah.tambah("mangga")
+untuk setiap b dalam buah {
+  tulis("Aku suka {b}")
+}</pre>
+          <p>Daftar angka bisa dijumlahkan.</p>
+          <pre class="naskah">misal nilai = [80, 90, 70]
+misal jumlah = 0
+untuk setiap n dalam nilai {
+  jumlah = jumlah + n
+}
+tulis("Jumlah: {jumlah}")
+tulis("Rata-rata: {jumlah / nilai.panjang}")</pre>
+          <div class="coba"><h3>Coba sendiri</h3><ul><li>Buat daftar nama teman-temanmu, lalu sapa mereka satu per satu.</li><li>Tambahkan satu nilai lagi ke daftar <code>nilai</code>.</li></ul></div>
+        </section>
+
+        <section class="lesson" id="pelajaran-7">
+          <h2>7. Membuat perintah sendiri</h2>
+          <p>Kita bisa membuat perintah sendiri dengan <code>fungsi</code>. Perintah itu dibuat sekali, lalu dipakai sebanyak yang kita mau.</p>
+          <pre class="naskah">fungsi sapa(nama) {
+  tulis("Halo, {nama}!")
+}
+
+sapa("Budi")
+sapa("Ani")</pre>
+          <p>Di dalam kurung ada bahan yang dibutuhkan perintah itu. Sebuah fungsi juga bisa memberi jawaban dengan <code>hasilkan</code>.</p>
+          <pre class="naskah">fungsi luas(panjang, lebar) {
+  hasilkan panjang * lebar
+}
+
+tulis(luas(4, 5))
+misal hasil = luas(3, 6)
+tulis("Luasnya {hasil}")</pre>
+          <p>Fungsi boleh dipakai di dalam syarat.</p>
+          <pre class="naskah">fungsi genap(n) {
+  hasilkan n % 2 == 0
+}
+
+untuk i dari 1 sampai 6 {
+  jika genap(i) {
+    tulis("{i} genap")
+  } lain {
+    tulis("{i} ganjil")
+  }
+}</pre>
+          <div class="coba"><h3>Coba sendiri</h3><ul><li>Buat fungsi <code>segitiga</code> yang menghitung luas segitiga dari alas dan tinggi.</li><li>Buat fungsi yang memberi tahu apakah sebuah nilai lulus.</li></ul></div>
+        </section>
+
+        <section class="lesson" id="pelajaran-8">
+          <h2>8. Benda dan cetakan</h2>
+          <p>Hewan punya nama dan suara. Kita bisa membuat <strong>cetakan</strong> untuk hewan, lalu mencetak banyak hewan dari cetakan itu. Nama cetakan selalu diawali <strong>huruf kapital</strong>.</p>
+          <pre class="naskah">Hewan(nama) {
+  .nama = nama
+
+  suara() {
+    hasilkan "..."
+  }
+}
+
+misal burung = Hewan("Kiki")
+tulis("{burung.nama} bilang {burung.suara()}")</pre>
+          <p><code>.nama</code> artinya <code>nama</code> milik benda ini sendiri. Cetakan boleh dipakai untuk membuat cetakan baru yang lebih khusus dengan <code>turunan</code>.</p>
+          <pre class="naskah">Hewan(nama) {
+  .nama = nama
+
+  suara() {
+    hasilkan "..."
+  }
+}
+
+Kucing(nama) turunan Hewan(nama) {
+  suara() {
+    hasilkan "meong"
+  }
+}
+
+misal tom = Kucing("Tom")
+tulis("{tom.nama} bilang {tom.suara()}")</pre>
+          <p>Kucing punya <code>suara</code> sendiri yang menggantikan milik Hewan. Kalau mau memakai yang milik Hewan, tulis dua titik: <code>..suara()</code>.</p>
+          <pre class="naskah">Hewan(nama) {
+  .nama = nama
+
+  suara() {
+    hasilkan "..."
+  }
+}
+
+Kucing(nama) turunan Hewan(nama) {
+  suara() {
+    hasilkan "meong, bukan {..suara()}"
+  }
+}
+
+tulis(Kucing("Tom").suara())</pre>
+          <div class="coba"><h3>Coba sendiri</h3><ul><li>Buat cetakan <code>Anjing</code> yang turunan dari <code>Hewan</code>, dengan suara <code>"guk"</code>.</li><li>Buat tiga hewan dan masukkan ke dalam daftar, lalu sapa semuanya.</li></ul></div>
+        </section>
+
+        <section class="lesson" id="pelajaran-9">
+          <h2>9. Kalau ada yang salah</h2>
+          <p>Semua orang pernah salah menulis, termasuk pembuat program yang hebat. Komputer akan memberi tahu apa yang salah dan di baris berapa. Bacalah pelan-pelan, petunjuknya membantu.</p>
+          <p>Di sini ada huruf yang tertukar. Komputer menebak maksudmu.</p>
+          <pre class="naskah" data-salah>misal nama = "Budi"
+tulis(nmaa)</pre>
+          <p>Angka desimal harus memakai koma, bukan titik.</p>
+          <pre class="naskah" data-salah>misal tinggi = 1.35
+tulis(tinggi)</pre>
+          <p>Ada juga kesalahan yang baru ketahuan saat program berjalan. <code>kosong</code> artinya tidak ada isinya, jadi kita tidak bisa mengambil apa-apa darinya.</p>
+          <pre class="naskah" data-galat>misal kotak = kosong
+tulis("Mulai")
+tulis(kotak.isi)</pre>
+          <p>Kesalahan seperti itu bisa ditangani dengan <code>coba</code> dan <code>tangkap</code>, sehingga program tidak berhenti.</p>
+          <pre class="naskah">coba {
+  misal kotak = kosong
+  tulis(kotak.isi)
+} tangkap galat {
+  tulis("Ups: {galat.pesan}")
+}
+tulis("Programnya tetap jalan.")</pre>
+          <div class="coba"><h3>Coba sendiri</h3><ul><li>Hapus satu huruf dari <code>tulis</code>, lalu lihat apa kata komputer.</li><li>Lupa menutup tanda kutip atau kurung, dan lihat petunjuknya.</li></ul></div>
+        </section>
+
+        <section class="lesson" id="pelajaran-10">
+          <h2>10. Proyek kecil</h2>
+          <p>Sekarang kamu bisa membuat program sendiri. Ini beberapa ide untuk dicoba dan diubah.</p>
+          <p><strong>Daftar belanja</strong> dengan jumlah harganya.</p>
+          <pre class="naskah">misal barang = ["beras", "telur", "gula"]
+misal harga = [12000, 28000, 15000]
+misal total = 0
+untuk i dari 0 sampai barang.panjang - 1 {
+  tulis("{barang[i]}: {harga[i]}")
+  total = total + harga[i]
+}
+tulis("Total: {total}")</pre>
+          <p><strong>Tabel perkalian</strong> dari 1 sampai 5.</p>
+          <pre class="naskah">untuk a dari 1 sampai 5 {
+  untuk b dari 1 sampai 5 {
+    tulis("{a} x {b} = {a * b}")
+  }
+}</pre>
+          <p><strong>Suara hewan</strong> dengan dua daftar.</p>
+          <pre class="naskah">misal hewan = ["kucing", "burung", "ikan"]
+misal suara = ["meong", "cuit", "blub"]
+untuk i dari 0 sampai 2 {
+  tulis("{hewan[i]} bilang {suara[i]}")
+}</pre>
+          <p><strong>Kartu nama</strong> dengan fungsi.</p>
+          <pre class="naskah">fungsi kartu(nama, umur, hobi) {
+  tulis("Namaku {nama}.")
+  tulis("Umurku {umur} tahun.")
+  tulis("Aku suka {hobi}.")
+}
+
+kartu("Ani", 9, "menggambar")
+kartu("Budi", 10, "bermain bola")</pre>
+        </section>
+
+        <section class="lesson" id="pelajaran-11">
+          <h2>11. Lanjutan: menunggu</h2>
+          <p>Komputer bisa disuruh menunggu. <code>tunda</code> menunggu sekian milidetik (1000 milidetik sama dengan 1 detik), dan <code>tunggu</code> menunggu sampai sebuah pekerjaan selesai.</p>
+          <pre class="naskah">fungsi hitungMundur() {
+  untuk i dari 3 sampai 1 langkah -1 {
+    tulis(i)
+    tunggu tunda(400)
+  }
+  tulis("Selesai!")
+}
+
+tunggu hitungMundur()</pre>
+          <p>Fungsi yang memakai <code>tunggu</code> otomatis berjalan sambil menunggu. Kamu tidak perlu menandainya.</p>
+          <div class="coba"><h3>Coba sendiri</h3><ul><li>Ubah lamanya menunggu, atau hitung mundur dari 5.</li></ul></div>
+        </section>
+
+        <p class="next">
+          Sudah selesai? Buka <a href="./">Tempat Coba</a> dan buat programmu sendiri.
+          Daftar lengkap kata-kata Naskah ada di <a href="./#kosakata">Kosakata</a>.
+        </p>
+      </main>
+
+      <footer class="foot">
+        <span>Naskah masih dalam pengembangan.</span>
+        <span>Lisensi MIT</span>
+      </footer>
+    </div>
+
+    <script type="module" src="./belajar.js"></script>
+  </body>
+</html>
