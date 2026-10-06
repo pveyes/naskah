@@ -21,9 +21,6 @@ jobs:
   demo:
     needs: test
     runs-on: ubuntu-latest
-    env:
-      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
     steps:
       - uses: actions/checkout@v5
@@ -42,8 +39,35 @@ jobs:
       - name: Check the deploy
         working-directory: demo/static
         run: npx --no-install cf deploy --dry-run
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+  # A separate job so that only pushes to master show up under "Deployments".
+  deploy:
+    needs: demo
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    environment:
+      name: Production
+      url: https://naskah.dev
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: demo/static/package-lock.json
+      - name: Build the wasm demo
+        run: ./scripts/build-demo.sh
+      - name: Install the cf CLI
+        working-directory: demo/static
+        run: npm ci --no-audit --no-fund
       - name: Deploy to Cloudflare
-        if: github.event_name == 'push'
         working-directory: demo/static
         run: |
           if [ -z "$CLOUDFLARE_API_TOKEN" ] || [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then
