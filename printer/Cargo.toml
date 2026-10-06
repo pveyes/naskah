@@ -2,6 +2,7 @@
 name = "printer"
 version = "0.1.0"
 authors = ["Fatih Kalifa <fatihkalifa@gmail.com>"]
+edition = "2021"
 
 [dependencies]
 parser = { path = "../parser" }

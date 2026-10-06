@@ -23,11 +23,19 @@ enum Msg {
     ChangeCode(String),
 }
 
-const EXAMPLE_CODE: &str = "misal x = 2 + 2;
-misal y = x > 2;
-jika y benar {
-  x = x + 1;
-  menang();
+const EXAMPLE_CODE: &str = "// Hitung faktorial
+fungsi faktorial(n) {
+  jika n <= 1 {
+    kembali 1;
+  }
+  kembali n * faktorial(n - 1);
+}
+
+misal hasil = faktorial(5);
+jika hasil > 100 dan bukan hasil == 0 {
+  tulis(\"besar:\", hasil);
+} lain {
+  tulis(\"kecil:\", hasil);
 }
 ";
 

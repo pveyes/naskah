@@ -1,6 +1,6 @@
 #[derive(PartialEq, Debug)]
 pub enum Literal {
-    Number(i64),
+    Number(f64),
     Null,
     String(String),
     Boolean(bool),
@@ -24,10 +24,25 @@ pub struct AssignmentExpression {
 }
 
 #[derive(PartialEq, Debug)]
+pub enum UnaryOperator {
+    /// `bukan`
+    Not,
+    /// `-`
+    Negate,
+}
+
+#[derive(PartialEq, Debug)]
+pub struct UnaryExpression {
+    pub operator: UnaryOperator,
+    pub argument: Expression,
+}
+
+#[derive(PartialEq, Debug)]
 pub enum Expression {
     Identifier(Identifier),
     Literal(Literal),
     BinaryExpression(Box<BinaryExpression>),
+    UnaryExpression(Box<UnaryExpression>),
     CallExpression(CallExpression),
     Assignment(AssignmentExpression),
 }
@@ -46,6 +61,10 @@ pub enum Operator {
     LessThan,
     GreaterThanOrEqualTo,
     LessThanOrEqualTo,
+    /// `dan`
+    And,
+    /// `atau`
+    Or,
 }
 
 #[derive(PartialEq, Debug)]
@@ -56,9 +75,25 @@ pub struct BinaryExpression {
 }
 
 #[derive(PartialEq, Debug)]
+pub enum VariableKind {
+    /// `misal`
+    Let,
+    /// `konstan`
+    Const,
+}
+
+#[derive(PartialEq, Debug)]
 pub struct VariableDeclaration {
+    pub kind: VariableKind,
     pub id: Identifier,
     pub value: Expression,
+}
+
+#[derive(PartialEq, Debug)]
+pub struct FunctionDeclaration {
+    pub id: Identifier,
+    pub params: Vec<Identifier>,
+    pub body: BlockStatement,
 }
 
 #[derive(PartialEq, Debug)]
@@ -75,6 +110,12 @@ pub struct IfStatement {
 }
 
 #[derive(PartialEq, Debug)]
+pub struct WhileStatement {
+    pub test: Expression,
+    pub body: BlockStatement,
+}
+
+#[derive(PartialEq, Debug)]
 pub struct BlockStatement {
     pub body: Option<Vec<Statement>>,
 }
@@ -83,10 +124,13 @@ pub struct BlockStatement {
 pub enum Statement {
     Break,
     Continue,
+    Return(Option<Expression>),
     Expression(Expression),
     VariableDeclaration(VariableDeclaration),
+    FunctionDeclaration(FunctionDeclaration),
     BlockStatement(BlockStatement),
     Loop(BlockStatement),
+    While(WhileStatement),
     IfStatement(IfStatement),
 }
 

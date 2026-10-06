@@ -15,6 +15,7 @@ pub enum Kind {
     Str,
     Function,
     Operator,
+    Comment,
 }
 
 impl Kind {
@@ -27,6 +28,7 @@ impl Kind {
             Kind::Str => "tok-string",
             Kind::Function => "tok-function",
             Kind::Operator => "tok-operator",
+            Kind::Comment => "tok-comment",
         }
     }
 }
@@ -34,8 +36,14 @@ impl Kind {
 impl Lang {
     fn keywords(self) -> &'static [&'static str] {
         match self {
-            Lang::Naskah => &["misal", "jika", "atau", "ulang", "berhenti", "lanjut"],
-            Lang::JavaScript => &["var", "let", "const", "if", "else", "for", "while", "break", "continue"],
+            Lang::Naskah => &[
+                "misal", "konstan", "jika", "lain", "selama", "ulang", "berhenti", "lanjut",
+                "fungsi", "kembali", "dan", "atau", "bukan",
+            ],
+            Lang::JavaScript => &[
+                "var", "let", "const", "if", "else", "for", "while", "break", "continue",
+                "function", "return",
+            ],
         }
     }
 
@@ -72,6 +80,15 @@ pub fn tokenize(lang: Lang, src: &str) -> Vec<(Kind, &str)> {
                     break;
                 }
                 end = i + c.len_utf8();
+                chars.next();
+            }
+        } else if c == '/' && src[start..].starts_with("//") {
+            kind = Kind::Comment;
+            while let Some(&(i, d)) = chars.peek() {
+                if d == '\n' {
+                    break;
+                }
+                end = i + d.len_utf8();
                 chars.next();
             }
         } else if c == '"' || c == '\'' {
@@ -153,6 +170,22 @@ mod test {
         assert!(toks.contains(&(Kind::Number, "0x1F")));
         assert!(toks.contains(&(Kind::Function, "f")));
         assert!(toks.contains(&(Kind::Str, "'s'")));
+    }
+
+    #[test]
+    fn comments() {
+        let toks = tokenize(Lang::Naskah, "x / 2; // bagi dua\ny");
+        assert!(toks.contains(&(Kind::Comment, "// bagi dua")));
+        assert!(toks.contains(&(Kind::Operator, "/")));
+        assert_eq!(toks.last(), Some(&(Kind::Plain, "y")));
+    }
+
+    #[test]
+    fn new_keywords() {
+        let toks = tokenize(Lang::Naskah, "fungsi f() { kembali a dan bukan b; }");
+        for word in &["fungsi", "kembali", "dan", "bukan"] {
+            assert!(toks.contains(&(Kind::Keyword, *word)), "{}", word);
+        }
     }
 
     #[test]

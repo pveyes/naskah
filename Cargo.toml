@@ -2,11 +2,13 @@
 name = "naskah"
 version = "0.1.0"
 authors = ["Fatih Kalifa <fatihkalifa@gmail.com>"]
+edition = "2021"
 repository = "https://github.com/pveyes/naskah"
 description = "Bahasa pemrograman dengan sintaks Bahasa Indonesia"
 license = "MIT"
 
 [workspace]
+resolver = "2"
 
 members = [
   "demo",

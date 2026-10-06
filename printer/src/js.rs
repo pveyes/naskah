@@ -42,19 +42,39 @@ fn print_identifier(i: Identifier) -> String {
 }
 
 fn print_binary_expression(b: Box<BinaryExpression>) -> String {
-    let mut res = String::new();
-
     let val = *b;
-    let left = print_expression(val.left);
-    let right = print_expression(val.right);
-    let operator = print_operator(val.operator);
+    let prec = operator_precedence(&val.operator);
+    let right_assoc = val.operator == Operator::Exponentiation;
 
-    res.push_str(&left);
-    res.push_str(" ");
-    res.push_str(&operator);
-    res.push_str(" ");
-    res.push_str(&right);
-    res
+    let left_prec = precedence(&val.left);
+    let right_prec = precedence(&val.right);
+    // JS rejects a unary operand on the left of `**`: (-a) ** b
+    let left_parens = left_prec < prec
+        || (left_prec == prec && right_assoc)
+        || (right_assoc && left_prec == PREC_UNARY);
+    let right_parens = right_prec < prec || (right_prec == prec && !right_assoc);
+
+    let operator = print_operator(val.operator);
+    let left = print_operand(val.left, left_parens);
+    let right = print_operand(val.right, right_parens);
+
+    format!("{} {} {}", left, operator, right)
+}
+
+fn print_unary_expression(u: Box<UnaryExpression>) -> String {
+    let val = *u;
+    let symbol = match val.operator {
+        UnaryOperator::Not => "!",
+        UnaryOperator::Negate => "-",
+    };
+    // avoid printing `--x`, which JS reads as a decrement
+    let nested_negation = val.operator == UnaryOperator::Negate
+        && match &val.argument {
+            Expression::UnaryExpression(inner) => inner.operator == UnaryOperator::Negate,
+            _ => false,
+        };
+    let parens = precedence(&val.argument) < PREC_UNARY || nested_negation;
+    format!("{}{}", symbol, print_operand(val.argument, parens))
 }
 
 fn print_operator(op: Operator) -> String {
@@ -71,20 +91,63 @@ fn print_operator(op: Operator) -> String {
         Operator::LessThan => String::from("<"),
         Operator::GreaterThanOrEqualTo => String::from(">="),
         Operator::LessThanOrEqualTo => String::from("<="),
+        Operator::And => String::from("&&"),
+        Operator::Or => String::from("||"),
+    }
+}
+
+// Same ordering as JavaScript, so a tree built from Naskah precedence
+// prints with exactly the parentheses JS needs.
+const PREC_ASSIGNMENT: u8 = 0;
+const PREC_UNARY: u8 = 8;
+const PREC_ATOM: u8 = 9;
+
+fn operator_precedence(op: &Operator) -> u8 {
+    match op {
+        Operator::Or => 1,
+        Operator::And => 2,
+        Operator::Equal | Operator::NotEqual => 3,
+        Operator::GreaterThan
+        | Operator::LessThan
+        | Operator::GreaterThanOrEqualTo
+        | Operator::LessThanOrEqualTo => 4,
+        Operator::Addition | Operator::Substraction => 5,
+        Operator::Multiplication | Operator::Division | Operator::Remainder => 6,
+        Operator::Exponentiation => 7,
+    }
+}
+
+fn precedence(e: &Expression) -> u8 {
+    match e {
+        Expression::Assignment(_) => PREC_ASSIGNMENT,
+        Expression::BinaryExpression(b) => operator_precedence(&b.operator),
+        Expression::UnaryExpression(_) => PREC_UNARY,
+        _ => PREC_ATOM,
+    }
+}
+
+/// Print `e` as an operand, wrapping it in parentheses when `needs_parens`.
+fn print_operand(e: Expression, needs_parens: bool) -> String {
+    let s = print_expression(e);
+    if needs_parens {
+        format!("({})", s)
+    } else {
+        s
+    }
+}
+
+/// Naskah built-ins and the JavaScript they stand for.
+fn builtin(name: &str) -> &str {
+    match name {
+        "tulis" => "console.log",
+        "tanya" => "prompt",
+        other => other,
     }
 }
 
 fn print_call_expression(c: CallExpression) -> String {
-    let mut x = String::new();
-    x.push_str(&c.callee.name);
-    x.push_str("(");
-    for argument in c.arguments {
-        let arg = print_expression(argument);
-        x.push_str(&arg);
-        x.push_str(",");
-    }
-    x.push_str(")");
-    x
+    let arguments: Vec<String> = c.arguments.into_iter().map(print_expression).collect();
+    format!("{}({})", builtin(&c.callee.name), arguments.join(", "))
 }
 
 fn print_assignment_expression(s: AssignmentExpression) -> String {
@@ -100,6 +163,7 @@ fn print_expression(e: Expression) -> String {
         Expression::Assignment(e) => print_assignment_expression(e),
         Expression::Literal(l) => print_literal(l),
         Expression::BinaryExpression(b) => print_binary_expression(b),
+        Expression::UnaryExpression(u) => print_unary_expression(u),
         Expression::CallExpression(c) => print_call_expression(c),
         Expression::Identifier(i) => print_identifier(i),
     }
@@ -125,11 +189,15 @@ fn print_block_statement(b: BlockStatement, depth: u8) -> String {
 }
 
 fn print_variable_declaration(v: VariableDeclaration, depth: u8) -> String {
+    let kind = match v.kind {
+        VariableKind::Let => "let ",
+        VariableKind::Const => "const ",
+    };
     let id = print_identifier(v.id);
     let val = print_expression(v.value);
     let mut st = String::new();
     st.push_str(&insert_indent(depth));
-    st.push_str("var ");
+    st.push_str(kind);
     st.push_str(&id);
     st.push_str(" = ");
     st.push_str(&val);
@@ -168,8 +236,36 @@ fn print_if_statement(i: IfStatement, depth: u8, inside_else: bool) -> String {
 fn print_loop_statement(b: BlockStatement, depth: u8) -> String {
     let mut res = String::new();
     res.push_str(&insert_indent(depth));
-    res.push_str("while(true) ");
+    res.push_str("while (true) ");
     res.push_str(&print_block_statement(b, depth));
+    res
+}
+
+fn print_while_statement(w: WhileStatement, depth: u8) -> String {
+    let mut res = insert_indent(depth);
+    res.push_str("while (");
+    res.push_str(&print_expression(w.test));
+    res.push_str(") ");
+    res.push_str(&print_block_statement(w.body, depth));
+    res
+}
+
+fn print_function_declaration(f: FunctionDeclaration, depth: u8) -> String {
+    let params: Vec<String> = f.params.into_iter().map(print_identifier).collect();
+    let mut res = insert_indent(depth);
+    res.push_str(&format!("function {}({}) ", f.id.name, params.join(", ")));
+    res.push_str(&print_block_statement(f.body, depth));
+    res
+}
+
+fn print_return_statement(value: Option<Expression>, depth: u8) -> String {
+    let mut res = insert_indent(depth);
+    res.push_str("return");
+    if let Some(e) = value {
+        res.push_str(" ");
+        res.push_str(&print_expression(e));
+    }
+    res.push_str(";");
     res
 }
 
@@ -187,6 +283,9 @@ fn print_statement(s: Statement, depth: u8) -> String {
         Statement::BlockStatement(s) => print_block_statement(s, depth),
         Statement::IfStatement(s) => print_if_statement(s, depth, false),
         Statement::Loop(s) => print_loop_statement(s, depth),
+        Statement::While(s) => print_while_statement(s, depth),
+        Statement::FunctionDeclaration(f) => print_function_declaration(f, depth),
+        Statement::Return(e) => print_return_statement(e, depth),
         Statement::Break => insert_indent(depth) + &String::from("break;"),
         Statement::Continue => insert_indent(depth) + &String::from("continue;"),
     };
@@ -211,6 +310,7 @@ mod test {
     fn name() {
         let s = print(Program {
             body: vec![Statement::VariableDeclaration(VariableDeclaration {
+                kind: VariableKind::Let,
                 id: Identifier {
                     name: String::from("x"),
                 },
@@ -218,6 +318,6 @@ mod test {
             })],
         });
 
-        assert_eq!(&s, &"var x = null;\n")
+        assert_eq!(&s, &"let x = null;\n")
     }
 }
