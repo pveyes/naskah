@@ -528,6 +528,34 @@ body.belajar .hero p {
   box-shadow: inset 2px 0 0 var(--focus);
 }
 
+/* Wavy underline and tooltip for a mistake in the code; see console.js */
+.squiggle {
+  position: absolute;
+  height: 4px;
+  background: var(--tok-keyword);
+  --wave: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='6' height='4'%3E%3Cpath d='M0 3 L1.5 1 L4.5 3 L6 1' fill='none' stroke='black' stroke-width='1.2'/%3E%3C/svg%3E");
+  -webkit-mask: var(--wave) repeat-x;
+  mask: var(--wave) repeat-x;
+}
+
+.squiggle-tip {
+  position: absolute;
+  max-width: min(360px, 100%);
+  padding: 6px 10px;
+  border: 1px solid var(--tok-keyword);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 0.85rem;
+  line-height: 1.4;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
+  z-index: 2;
+}
+
+.squiggle-tip[hidden] {
+  display: none;
+}
+
 .playground {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -598,8 +626,7 @@ body.belajar .hero p {
 }
 
 .editor textarea:focus-visible {
-  outline: 2px solid var(--focus);
-  outline-offset: -2px;
+  outline: none;
 }
 
 .editor textarea::selection {

@@ -44,8 +44,12 @@ function lineRows(root, lineNumber) {
 
   let start = 0;
   for (let i = 0; i < lineNumber - 1; i++) start += lines[i].length + 1;
-  const end = start + lines[lineNumber - 1].length;
-  if (end === start) return [];
+  return rangeRects(root, start, start + lines[lineNumber - 1].length);
+}
+
+/** Client rects (one per visual row) covering characters `start` to `end` of `root`'s text. */
+function rangeRects(root, start, end) {
+  if (end <= start) return [];
 
   const range = document.createRange();
   const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
@@ -98,6 +102,78 @@ function showBand(naskahLine) {
 function hideBand() {
   bands.replaceChildren();
 }
+
+// A wavy line under the word a mistake is at, with the message in a tooltip.
+// Like the bands it is drawn in a layer of its own, and the textarea on top gets the
+// mouse, so the tooltip is found by hit-testing the pointer against the squiggles.
+const squiggles = document.getElementById("squiggles");
+let squiggleBoxes = [];
+const tip = document.createElement("div");
+tip.className = "squiggle-tip";
+tip.hidden = true;
+tip.setAttribute("role", "tooltip");
+
+function clearSquiggle() {
+  squiggles.replaceChildren(tip);
+  tip.hidden = true;
+  squiggleBoxes = [];
+}
+
+/** The word starting at `column` (1-based) of `line`, or one character when there is none. */
+function mistakeSpan(text, line, column) {
+  const lines = text.split("\n");
+  if (line < 1 || line > lines.length) return null;
+  let start = 0;
+  for (let i = 0; i < line - 1; i++) start += lines[i].length + 1;
+  const content = lines[line - 1];
+  if (content.trim() === "") return null;
+  // a mistake past the last character (a missing `}`) points at the last one
+  let from = Math.min(Math.max(column - 1, 0), content.length - 1);
+  const rest = content.slice(from);
+  // a string runs to its closing quote, or to the end of the line when it never closes
+  const closed = /^"(?:\\.|[^"\\])*"/.exec(rest);
+  if (rest[0] === '"') return [start + from, start + from + (closed ? closed[0].length : rest.length)];
+  // a number may have a decimal comma: 1,5
+  const token = /^\d+(?:,\d+)?/.exec(rest) ?? /^[\p{L}\p{N}_]+/u.exec(rest);
+  return [start + from, start + from + (token ? token[0].length : 1)];
+}
+
+function showSquiggle(line, column, message) {
+  clearSquiggle();
+  const backdrop = document.querySelector("#playground .backdrop");
+  if (!backdrop) return;
+  const span = mistakeSpan(backdrop.textContent, line, column);
+  if (!span) return;
+
+  const origin = squiggles.getBoundingClientRect();
+  for (const rect of rangeRects(backdrop, span[0], span[1])) {
+    const mark = document.createElement("div");
+    mark.className = "squiggle";
+    mark.style.left = rect.left - origin.left + "px";
+    mark.style.top = rect.bottom - origin.top - 4 + "px";
+    mark.style.width = rect.width + "px";
+    squiggles.appendChild(mark);
+    squiggleBoxes.push({ left: rect.left, right: rect.right, top: rect.top, bottom: rect.bottom, message });
+  }
+}
+
+function showTip(event) {
+  const hit = squiggleBoxes.find(
+    (b) => event.clientX >= b.left && event.clientX <= b.right && event.clientY >= b.top && event.clientY <= b.bottom
+  );
+  if (!hit) {
+    tip.hidden = true;
+    return;
+  }
+  const origin = squiggles.getBoundingClientRect();
+  tip.textContent = hit.message;
+  tip.hidden = false;
+  tip.style.left = Math.max(0, Math.min(hit.left - origin.left, origin.width - tip.offsetWidth)) + "px";
+  tip.style.top = hit.top - origin.top - tip.offsetHeight - 6 + "px";
+}
+
+document.getElementById("playground").addEventListener("mousemove", showTip);
+document.getElementById("playground").addEventListener("mouseleave", () => (tip.hidden = true));
 
 function placeholder(text) {
   clear();
@@ -157,6 +233,7 @@ function run(js) {
 }
 
 function update(manual = false) {
+  clearSquiggle();
   const js = document.getElementById("js")?.innerText ?? "";
   const mistake = /^\/\/ Salah sintaks di baris (\d+), kolom (\d+): (.*)/.exec(js);
   if (mistake) {
@@ -165,6 +242,7 @@ function update(manual = false) {
     runId += 1;
     clear();
     addLine("error", "Salah tulis: " + mistake[3], Number(mistake[1]), Number(mistake[2]));
+    showSquiggle(Number(mistake[1]), Number(mistake[2]), mistake[3]);
     status.textContent = "Ada yang salah";
     return;
   }
