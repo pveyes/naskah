@@ -688,23 +688,6 @@ body.belajar .hero p {
   font-size: 0.95rem;
 }
 
-.for-teachers {
-  margin-top: 8px;
-  color: var(--muted);
-  font-size: 0.9rem;
-}
-
-.for-teachers summary {
-  cursor: pointer;
-  padding: 12px 0;
-  text-underline-offset: 4px;
-}
-
-.for-teachers summary:hover {
-  color: var(--ink);
-  text-decoration: underline;
-}
-
 .vocab table {
   width: 100%;
   table-layout: fixed;
@@ -795,4 +778,40 @@ body.belajar .hero p {
   .foot {
     flex-direction: column;
   }
+}
+
+/* The page for teachers and developers */
+body.guru .hero p {
+  max-width: 62ch;
+}
+
+.notes {
+  max-width: 62ch;
+  margin-bottom: 72px;
+}
+
+.notes h2 {
+  margin: 0 0 16px;
+  font-family: var(--display);
+  font-size: clamp(1.75rem, 4vw, 2.5rem);
+  font-weight: 400;
+}
+
+.notes li {
+  margin-bottom: 14px;
+  line-height: 1.7;
+}
+
+.notes code {
+  padding: 1px 6px;
+  border-radius: 6px;
+  background: var(--surface-bar);
+  font-family: var(--mono);
+  font-size: 0.9em;
+}
+
+.notes a,
+.foot a {
+  color: inherit;
+  text-underline-offset: 4px;
 }

@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Untuk guru dan pengembang - Naskah dan JavaScript</title>
+    <meta
+      name="description"
+      content="Padanan JavaScript untuk setiap kata Naskah, dan cara kerja Naskah di balik layar."
+    />
+    <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="./apple-touch-icon.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600&family=IM+Fell+English&family=JetBrains+Mono:wght@400;500&display=swap"
+    />
+    <link rel="stylesheet" type="text/css" href="./style.css" />
+  </head>
+
+  <body class="guru">
+    <div class="page">
+      <header class="top">
+        <a class="wordmark" href="./">naskah</a>
+        <nav>
+          <a class="top-link" href="./">Tempat Coba</a>
+          <a class="top-link" href="./belajar.html">Belajar</a>
+          <a class="top-link" href="https://github.com/pveyes/naskah">GitHub</a>
+        </nav>
+      </header>
+
+      <main>
+        <section class="hero">
+          <h1>Untuk guru dan pengembang</h1>
+          <p>
+            Naskah dibuat untuk anak-anak yang belum bisa bahasa Inggris, jadi murid tidak perlu
+            melihat JavaScript sama sekali. Di balik layar, program Naskah diterjemahkan ke
+            JavaScript supaya bisa langsung berjalan di peramban. Halaman ini untuk Anda yang
+            ingin tahu bagaimana caranya.
+          </p>
+        </section>
+
+        <section class="notes">
+          <h2>Cara kerjanya</h2>
+          <ul>
+            <li>
+              Naskah dibaca oleh penerjemah yang ditulis dengan Rust (diubah menjadi WebAssembly),
+              lalu diubah menjadi JavaScript yang rapi, satu pernyataan per baris. Hasilnya
+              dijalankan di <em>web worker</em> yang bisa dihentikan, sehingga ulangan tanpa akhir
+              tidak membekukan halaman. Program yang berjalan lebih dari 2 detik dihentikan.
+            </li>
+            <li>
+              Murid tidak pernah melihat JavaScript. Kesalahan ditulis dalam Bahasa Indonesia
+              dengan nomor baris Naskah, bukan nomor baris JavaScript. Di Tempat Coba ada tautan
+              <strong>Lihat JavaScript</strong> bagi yang ingin melihat hasil terjemahannya.
+            </li>
+            <li>
+              Angka desimal ditulis dengan koma di Naskah (<code>1,5</code>) dan menjadi
+              <code>1.5</code> di JavaScript. Di Keluaran, angka tampil dengan koma lagi.
+            </li>
+            <li>
+              Beberapa fungsi bantu dibuat oleh Tempat Coba dan dipanggil dari JavaScript hasil
+              terjemahan: <code>__tambah</code> (tanda <code>+</code> yang bisa menyambung teks
+              dengan angka berkoma), <code>__teks</code> (nilai di dalam teks) dan
+              <code>__pesan</code> (pesan sebuah kesalahan, dijelaskan dalam Bahasa Indonesia).
+              Jadi JavaScript hasil terjemahan tidak berdiri sendiri.
+            </li>
+            <li>
+              Nama yang di JavaScript berarti sesuatu, seperti <code>delete</code> atau
+              <code>class</code>, boleh dipakai di Naskah. Di JavaScript namanya diberi tanda
+              <code>$</code> di belakang, misalnya <code>delete$</code>.
+            </li>
+            <li>
+              Fungsi yang memakai <code>tunggu</code> otomatis menjadi <code>async</code>, dan
+              fungsi tanpa nama menjadi <em>arrow function</em> supaya <code>.nama</code> tetap
+              menunjuk benda yang sama.
+            </li>
+          </ul>
+          <p>
+            Penjelasan lengkap tentang bahasanya ada di
+            <a href="https://github.com/pveyes/naskah/blob/master/SYNTAX.md">SYNTAX.md</a>.
+          </p>
+        </section>
+
+        <section class="vocab" id="padanan">
+          <h2>Padanan JavaScript</h2>
+          <div class="vocab-body">
+            <div class="vocab-tables">
+          <table>
+            <caption>Dasar</caption>
+            <thead>
+              <tr><th scope="col">Naskah</th><th scope="col">JavaScript</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><code class="tok-keyword">misal</code></td><td><code class="tok-keyword">let</code></td></tr>
+              <tr><td><code class="tok-keyword">konstan</code></td><td><code class="tok-keyword">const</code></td></tr>
+              <tr><td><code class="tok-literal">benar</code> / <code class="tok-literal">salah</code> / <code class="tok-literal">kosong</code></td><td><code class="tok-literal">true</code> / <code class="tok-literal">false</code> / <code class="tok-literal">null</code></td></tr>
+              <tr><td><code class="tok-keyword">dan</code> / <code class="tok-keyword">atau</code> / <code class="tok-keyword">bukan</code></td><td><code class="tok-operator">&amp;&amp;</code> / <code class="tok-operator">||</code> / <code class="tok-operator">!</code></td></tr>
+              <tr><td><code class="tok-function">tulis</code>(x)</td><td><code class="tok-function">console.log</code>(x)</td></tr>
+              <tr><td><code class="tok-function">tanya</code>(x)</td><td><code class="tok-function">prompt</code>(x)</td></tr>
+              <tr><td><code class="tok-string">"Halo, {nama}"</code></td><td><code class="tok-string">`Halo, ${nama}`</code></td></tr>
+            </tbody>
+          </table>
+          <table>
+            <caption>Alur</caption>
+            <thead class="sr-only">
+              <tr><th scope="col">Naskah</th><th scope="col">JavaScript</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><code class="tok-keyword">jika</code> / <code class="tok-keyword">lain</code></td><td><code class="tok-keyword">if</code> / <code class="tok-keyword">else</code></td></tr>
+              <tr><td><code class="tok-keyword">pilih</code> / <code class="tok-keyword">kalau</code> / <code class="tok-keyword">lain</code></td><td><code class="tok-keyword">if</code> / <code class="tok-keyword">else if</code> / <code class="tok-keyword">else</code></td></tr>
+              <tr><td><code class="tok-keyword">selama</code></td><td><code class="tok-keyword">while</code></td></tr>
+              <tr><td><code class="tok-keyword">ulang</code></td><td><code class="tok-keyword">while</code> (true)</td></tr>
+              <tr><td><code class="tok-keyword">untuk</code> i <code class="tok-keyword">dari</code> 1 <code class="tok-keyword">sampai</code> 9</td><td><code class="tok-keyword">for</code> (i = 1; i &lt;= 9; i++)</td></tr>
+              <tr><td><code class="tok-keyword">untuk setiap</code> x <code class="tok-keyword">dalam</code> xs</td><td><code class="tok-keyword">for</code> (x <code class="tok-keyword">of</code> xs)</td></tr>
+              <tr><td><code class="tok-keyword">berhenti</code> / <code class="tok-keyword">lanjut</code></td><td><code class="tok-keyword">break</code> / <code class="tok-keyword">continue</code></td></tr>
+            </tbody>
+          </table>
+          <table>
+            <caption>Fungsi</caption>
+            <thead class="sr-only">
+              <tr><th scope="col">Naskah</th><th scope="col">JavaScript</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><code class="tok-keyword">fungsi</code> nama(x)</td><td><code class="tok-keyword">function</code> nama(x)</td></tr>
+              <tr><td><code class="tok-keyword">fungsi</code> (x)</td><td>(x) =&gt; { }</td></tr>
+              <tr><td><code class="tok-keyword">hasilkan</code></td><td><code class="tok-keyword">return</code></td></tr>
+              <tr><td>{ <code class="tok-keyword">hasilkan</code> x }</td><td>(() =&gt; { <code class="tok-keyword">return</code> x })()</td></tr>
+              <tr><td><code class="tok-keyword">fungsi</code> berisi <code class="tok-keyword">tunggu</code></td><td><code class="tok-keyword">async</code> <code class="tok-keyword">function</code></td></tr>
+              <tr><td><code class="tok-keyword">tunggu</code></td><td><code class="tok-keyword">await</code></td></tr>
+              <tr><td><code class="tok-function">tunda</code>(ms)</td><td><code class="tok-keyword">new</code> Promise(... setTimeout ...)</td></tr>
+            </tbody>
+          </table>
+          <table>
+            <caption>Kelas</caption>
+            <thead class="sr-only">
+              <tr><th scope="col">Naskah</th><th scope="col">JavaScript</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><code class="tok-class">Hewan</code>(x) { }</td><td><code class="tok-keyword">class</code> <code class="tok-class">Hewan</code> { <code class="tok-keyword">constructor</code>(x) { } }</td></tr>
+              <tr><td><code class="tok-class">Kucing</code>(x) <code class="tok-keyword">turunan</code> <code class="tok-class">Hewan</code>(y)</td><td><code class="tok-keyword">class</code> <code class="tok-class">Kucing</code> <code class="tok-keyword">extends</code> <code class="tok-class">Hewan</code> { <code class="tok-keyword">constructor</code>(x) { <code class="tok-keyword">super</code>(y) } }</td></tr>
+              <tr><td><code class="tok-class">Kucing</code>(x)</td><td><code class="tok-keyword">new</code> <code class="tok-class">Kucing</code>(x)</td></tr>
+              <tr><td>.<code class="tok-function">nama</code></td><td><code class="tok-keyword">this</code>.nama</td></tr>
+              <tr><td>..<code class="tok-function">suara</code>()</td><td><code class="tok-keyword">super</code>.suara()</td></tr>
+            </tbody>
+          </table>
+          <table>
+            <caption>Galat</caption>
+            <thead class="sr-only">
+              <tr><th scope="col">Naskah</th><th scope="col">JavaScript</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><code class="tok-keyword">coba</code> / <code class="tok-keyword">tangkap</code> / <code class="tok-keyword">akhirnya</code></td><td><code class="tok-keyword">try</code> / <code class="tok-keyword">catch</code> / <code class="tok-keyword">finally</code></td></tr>
+              <tr><td><code class="tok-keyword">lempar</code></td><td><code class="tok-keyword">throw</code></td></tr>
+              <tr><td><code class="tok-class">Galat</code>(x)</td><td><code class="tok-keyword">new</code> <code class="tok-class">Error</code>(x)</td></tr>
+              <tr><td>e.<code class="tok-function">pesan</code></td><td>e.<code class="tok-function">message</code></td></tr>
+            </tbody>
+          </table>
+          <table>
+            <caption>Daftar</caption>
+            <thead class="sr-only">
+              <tr><th scope="col">Naskah</th><th scope="col">JavaScript</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>xs.<code class="tok-function">panjang</code></td><td>xs.<code class="tok-function">length</code></td></tr>
+              <tr><td>xs.<code class="tok-function">tambah</code>(x)</td><td>xs.<code class="tok-function">push</code>(x)</td></tr>
+              <tr><td>xs.<code class="tok-function">gabung</code>(", ")</td><td>xs.<code class="tok-function">join</code>(", ")</td></tr>
+              <tr><td>xs.<code class="tok-function">balik</code>()</td><td>xs.<code class="tok-function">reverse</code>()</td></tr>
+              <tr><td>xs.<code class="tok-function">peta</code>(f)</td><td>xs.<code class="tok-function">map</code>(f)</td></tr>
+              <tr><td>xs.<code class="tok-function">saring</code>(f)</td><td>xs.<code class="tok-function">filter</code>(f)</td></tr>
+              <tr><td>xs.<code class="tok-function">cari</code>(f)</td><td>xs.<code class="tok-function">find</code>(f)</td></tr>
+              <tr><td>xs.<code class="tok-function">urut</code>()</td><td>xs.<code class="tok-function">sort</code>()</td></tr>
+            </tbody>
+          </table>
+          </div>
+          </div>
+        </section>
+      </main>
+
+      <footer class="foot">
+        <span>Naskah masih dalam pengembangan.</span>
+        <span>Lisensi MIT</span>
+      </footer>
+    </div>
+  </body>
+</html>

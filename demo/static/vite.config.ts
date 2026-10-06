@@ -6,7 +6,7 @@ export default defineConfig({
 	build: {
 		// two pages: the playground and the tutorial
 		rollupOptions: {
-			input: { main: "index.html", belajar: "belajar.html" },
+			input: { main: "index.html", belajar: "belajar.html", guru: "guru.html" },
 		},
 	},
 });

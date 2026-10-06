@@ -34,7 +34,7 @@ Things that break the rules above today. Fix them rather than copying them.
 - Runtime-error explanations match Chrome's wording. Other browsers fall back to a generic Indonesian sentence about the kind of error, which is safe but less specific.
 - Built-ins that are still English: `Math`, `Date`, `JSON`, `Promise`, the string and number methods. They are allowed by `GLOBALS` in `parser/src/syntax.rs` so nothing breaks, but they need Indonesian names.
 - `.gabung(",")` and other JavaScript methods still turn numbers into text with a dot.
-- The JavaScript pane toggle and its teachers' section are the only places that say "JavaScript"; keep it that way.
+- The JavaScript pane toggle, the link to `guru.html` and that page itself are the only places that say "JavaScript" (besides the tutorial's own sentence about English); keep it that way. `guru.html` is where the Naskah-to-JavaScript equivalents live, for teachers and developers.
 
 ## How the pieces fit
 
