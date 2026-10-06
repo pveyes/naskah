@@ -16,6 +16,7 @@
   --tok-function: #8a5a00;
   --tok-operator: #9a8466;
 
+  --display: "IM Fell English", "Iowan Old Style", Georgia, serif;
   --sans: "Bricolage Grotesque", system-ui, -apple-system, "Segoe UI", sans-serif;
   --mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
 }
@@ -83,9 +84,9 @@ a {
 }
 
 .wordmark {
-  font-size: 1.5rem;
-  font-weight: 800;
-  letter-spacing: -0.03em;
+  font-family: var(--display);
+  font-size: 1.75rem;
+  line-height: 1;
 }
 
 .top-link {
@@ -104,11 +105,11 @@ a {
 
 .hero h1 {
   margin: 0;
-  max-width: 14ch;
-  font-size: clamp(2.75rem, 8vw, 5.75rem);
-  font-weight: 800;
-  line-height: 0.98;
-  letter-spacing: -0.03em;
+  max-width: 17ch;
+  font-family: var(--display);
+  font-size: clamp(2.75rem, 8vw, 5.5rem);
+  font-weight: 400;
+  line-height: 1.02;
   text-wrap: balance;
 }
 
@@ -219,9 +220,9 @@ a {
 
 .vocab h2 {
   margin: 0;
-  font-size: clamp(1.75rem, 4vw, 2.5rem);
-  font-weight: 800;
-  letter-spacing: -0.03em;
+  font-family: var(--display);
+  font-size: clamp(2rem, 4vw, 2.75rem);
+  font-weight: 400;
   line-height: 1.1;
 }
 
