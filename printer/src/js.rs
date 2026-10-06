@@ -194,6 +194,7 @@ fn builtin(name: &str) -> String {
     match name {
         "tulis" => String::from("console.log"),
         "tanya" => String::from("prompt"),
+        "bilangan" => String::from("__bilangan"),
         "Galat" => String::from("Error"),
         other => safe_name(other),
     }

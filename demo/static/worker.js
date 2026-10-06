@@ -185,9 +185,43 @@ const __teks = (v) => show(v, true);
 // `+` that joins text the Indonesian way when either side is text
 const __tambah = (a, b) => (typeof a === "string" || typeof b === "string" ? __teks(a) + __teks(b) : a + b);
 
-const prompt = () => {
-  post("error", "tanya() belum didukung di sini dan selalu mengembalikan kosong.");
-  return null;
+// ---------------------------------------------------------------- asking a person
+
+// tanya(...) has to wait for someone to type, but reads like any other call. A worker can
+// only wait for the page by sleeping on shared memory, which the page hands over as
+// `answers`: two whole numbers (state, length) followed by the answer as 16-bit letters.
+// The page needs the cross-origin headers in public/_headers for that.
+const ANSWER_MAX = 400;
+let waitedMs = 0; // time spent waiting for a person, which is not time the program ran
+let control = null;
+let letters = null;
+
+const WAITING = 0;
+const ANSWERED = 1;
+const NO_ANSWER = 2;
+
+// the program calls this as `prompt`, which is what tanya turns into
+const prompt = (question) => {
+  if (!control) {
+    post("error", "tanya() belum bisa dipakai di sini dan selalu mengembalikan kosong.");
+    return null;
+  }
+  postMessage({ type: "ask", question: question === undefined ? "" : show(question, true) });
+  const waitStarted = performance.now();
+  Atomics.wait(control, 0, WAITING);
+  waitedMs += performance.now() - waitStarted;
+  const state = Atomics.load(control, 0);
+  const length = Atomics.load(control, 1);
+  const text = String.fromCharCode(...letters.subarray(0, length));
+  Atomics.store(control, 0, WAITING);
+  return state === ANSWERED ? text : null;
+};
+
+// an answer is text; this makes it a number the way it is written in Indonesia: 1,5 and 1.000
+const __bilangan = (value) => {
+  const text = String(value === null || value === undefined ? "" : value).trim();
+  if (!/^-?(\d+|\d{1,3}(\.\d{3})+)(,\d+)?$/.test(text)) return NaN;
+  return Number(text.replace(/\./g, "").replace(",", "."));
 };
 
 function report(e) {
@@ -198,14 +232,18 @@ self.addEventListener("unhandledrejection", (event) => report(event.reason));
 
 self.onmessage = async (event) => {
   lineMap = event.data.lines || [];
+  if (event.data.answers) {
+    control = new Int32Array(event.data.answers, 0, 2);
+    letters = new Uint16Array(event.data.answers, 8, ANSWER_MAX);
+  }
   await calibrate();
 
   const started = performance.now();
   try {
-    const program = new AsyncFunction("console", "prompt", "__log", "__pesan", "__teks", "__tambah", '"use strict";\n' + event.data.code);
-    await program(sandbox, prompt, __log, __pesan, __teks, __tambah);
+    const program = new AsyncFunction("console", "prompt", "__log", "__pesan", "__teks", "__tambah", "__bilangan", '"use strict";\n' + event.data.code);
+    await program(sandbox, prompt, __log, __pesan, __teks, __tambah, __bilangan);
   } catch (e) {
     report(e);
   }
-  postMessage({ type: "done", ms: performance.now() - started });
+  postMessage({ type: "done", ms: performance.now() - started - waitedMs });
 };

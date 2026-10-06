@@ -1,0 +1,5 @@
+# Keluaran sleeps the program on shared memory while a child types an answer to tanya(...).
+# Browsers only allow shared memory on pages that are isolated from other sites.
+/*
+  Cross-Origin-Opener-Policy: same-origin
+  Cross-Origin-Embedder-Policy: require-corp

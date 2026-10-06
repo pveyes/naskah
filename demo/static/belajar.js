@@ -3,25 +3,7 @@
 
 import init, { compile_program, highlight_html } from "./assets/wasm.js";
 import { readCompiled, runProgram, TIME_LIMIT_MS } from "./runner.js";
-
-function addLine(output, level, text, line, column) {
-  const row = document.createElement("div");
-  row.className = "console-line console-" + level;
-
-  const message = document.createElement("span");
-  message.className = "console-text";
-  message.textContent = text;
-  row.appendChild(message);
-
-  if (line) {
-    const site = document.createElement("span");
-    site.className = "console-site";
-    site.textContent = "naskah.nsk:" + line + (column ? ":" + column : "");
-    row.appendChild(site);
-  }
-  output.appendChild(row);
-  output.scrollTop = output.scrollHeight;
-}
+import { addLine, ask } from "./terminal.js";
 
 function element(tag, className, text) {
   const node = document.createElement(tag);
@@ -74,6 +56,10 @@ function enhance(pre) {
       line(msg) {
         printed += 1;
         addLine(output, msg.level, msg.text, msg.line);
+      },
+      ask(question, reply) {
+        printed += 1;
+        return ask(output, question, reply);
       },
       done() {
         if (printed === 0) addLine(output, "note", "Tidak ada keluaran. Gunakan tulis(...) untuk mencetak.");

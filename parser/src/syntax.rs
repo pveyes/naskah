@@ -14,8 +14,8 @@ const RESERVED: [&str; 24] = [
 
 /// Names a program can use without declaring them: the Naskah built-ins, and the
 /// JavaScript globals that keep working for now.
-const GLOBALS: [&str; 35] = [
-    "tulis", "tanya", "tunda", "Galat", "Math", "JSON", "Date", "Number", "String", "Array",
+const GLOBALS: [&str; 36] = [
+    "tulis", "tanya", "tunda", "bilangan", "Galat", "Math", "JSON", "Date", "Number", "String", "Array",
     "Object", "Boolean", "Promise", "Symbol", "Map", "Set", "RegExp", "Intl", "Error", "TypeError",
     "RangeError", "ReferenceError", "SyntaxError", "parseInt", "parseFloat", "isNaN", "isFinite",
     "NaN", "Infinity", "undefined", "console", "setTimeout", "setInterval", "clearTimeout", "clearInterval",
@@ -118,7 +118,7 @@ impl Parser {
                 None => break,
             }
         }
-        names.extend(GLOBALS[..4].iter().map(|n| n.to_string()));
+        names.extend(GLOBALS[..5].iter().map(|n| n.to_string()));
         names
     }
 
@@ -1505,6 +1505,16 @@ mod test {
         assert_eq!(
             checked("misal nama = 1\ntulis(kucing)"),
             Err(String::from("baris 2, kolom 7: `kucing` belum dibuat. Buat dulu dengan misal kucing = ..."))
+        );
+    }
+
+    #[test]
+    fn the_naskah_built_ins_need_no_declaration() {
+        assert_eq!(checked("misal nama = tanya(\"Siapa?\")\ntulis(bilangan(nama))\ntunda(1)"), Ok(()));
+        // and are offered when a name looks like a misspelling of one
+        assert_eq!(
+            checked("tulis(bilngan(\"1\"))"),
+            Err(String::from("baris 1, kolom 7: `bilngan` belum dibuat. Maksudmu `bilangan`?"))
         );
     }
 

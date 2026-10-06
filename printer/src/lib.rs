@@ -100,6 +100,16 @@ mod test {
     }
 
     #[test]
+    fn asking_and_reading_numbers() {
+        assert_eq!(
+            js("misal umur = bilangan(tanya(\"Umur?\"))"),
+            "let umur = __bilangan(prompt(\"Umur?\"));\n"
+        );
+        // a name that merely contains the word is left alone
+        assert_eq!(js("misal bilangan2 = 1"), "let bilangan2 = 1;\n");
+    }
+
+    #[test]
     fn const_and_builtins() {
         assert_eq!(
             js("konstan nama = \"Budi\";\ntulis(\"halo\", nama);\n"),
