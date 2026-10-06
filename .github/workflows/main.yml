@@ -14,44 +14,28 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v2
-      - name: Build
-        run: cargo build --verbose
+      - uses: actions/checkout@v4
       - name: Run tests
-        run: cargo test --verbose
+        run: cargo test --workspace --verbose
 
   demo:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - name: Build
         run: ./scripts/build-demo.sh
-      - name: Deploy staging
-        uses: amondnet/vercel-action@v19
+      - name: Upload preview version
+        uses: cloudflare/wrangler-action@v3
         if: github.event_name == 'pull_request'
         with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-      - name: check production
-        id: prod_or_not
-        run: |
-          if [ "$REF" == 'refs/head/master' ]
-          then
-            echo "::set-output name=vercel-args::--prod"
-          else
-            echo "::set-output name=vercel-args::"
-          fi
-        env:
-          REF: ${{ github.ref }}
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: versions upload
       - name: Deploy production
-        uses: amondnet/vercel-action@v19
+        uses: cloudflare/wrangler-action@v3
         if: github.event_name == 'push'
         with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-          vercel-args: ${{ steps.prod_or_not.outputs.vercel-args }}
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: deploy

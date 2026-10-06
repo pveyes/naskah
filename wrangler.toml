@@ -1,0 +1,6 @@
+name = "naskah"
+compatibility_date = "2026-10-01"
+
+# Static site only. Served at https://naskah.<account>.workers.dev
+[assets]
+directory = "./demo/static"
