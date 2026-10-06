@@ -33,7 +33,18 @@
           </p>
         </section>
 
-        <section class="playground" id="playground" aria-label="Playground"></section>
+        <div class="playground-wrap">
+          <section class="playground" id="playground" aria-label="Playground"></section>
+          <div class="line-bands" id="line-bands" aria-hidden="true"></div>
+        </div>
+
+        <section class="console" aria-label="Keluaran">
+          <div class="console-bar">
+            <span class="pane-title">Keluaran</span>
+            <span class="console-status" id="console-status">Menunggu</span>
+          </div>
+          <div class="console-output" id="console-output" role="log" aria-live="polite"></div>
+        </section>
 
         <section class="vocab">
           <h2>Kosakata</h2>
@@ -85,5 +96,6 @@
       import init from "./assets/wasm.js";
       init();
     </script>
+    <script type="module" src="./console.js"></script>
   </body>
 </html>

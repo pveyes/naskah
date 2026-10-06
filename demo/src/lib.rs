@@ -8,7 +8,7 @@ extern crate yew;
 use wasm_bindgen::prelude::*;
 use yew::prelude::*;
 
-use printer::to_js;
+use printer::transpile;
 
 mod highlight;
 use highlight::{tokenize, Kind, Lang};
@@ -17,6 +17,8 @@ struct Model {
     link: ComponentLink<Self>,
     code: String,
     transpiled: String,
+    /// `js_line:naskah_line` pairs, read by console.js
+    call_sites: String,
 }
 
 enum Msg {
@@ -45,6 +47,16 @@ fungsi golongan(jumlah) {
 tulis(golongan(belanja.panjang), total);
 ";
 
+fn compile(src: &str) -> (String, String) {
+    let t = transpile(src);
+    let sites: Vec<String> = t
+        .call_sites
+        .iter()
+        .map(|(js, naskah)| format!("{}:{}", js, naskah))
+        .collect();
+    (t.js, sites.join(","))
+}
+
 fn highlighted(lang: Lang, src: &str) -> Html {
     html! {
         <>
@@ -60,17 +72,21 @@ impl Component for Model {
     type Message = Msg;
     type Properties = ();
     fn create(_: Self::Properties, link: ComponentLink<Self>) -> Self {
+        let (transpiled, call_sites) = compile(EXAMPLE_CODE);
         Self {
             link,
             code: EXAMPLE_CODE.into(),
-            transpiled: to_js(EXAMPLE_CODE.into()),
+            transpiled,
+            call_sites,
         }
     }
 
     fn update(&mut self, msg: Self::Message) -> ShouldRender {
         match msg {
             Msg::ChangeCode(v) => {
-                self.transpiled = to_js(v.clone().into());
+                let (transpiled, call_sites) = compile(&v);
+                self.transpiled = transpiled;
+                self.call_sites = call_sites;
                 self.code = v;
             }
         }
@@ -98,6 +114,7 @@ impl Component for Model {
                     <span class="pane-title">{"JavaScript"}</span>
                     <pre class="output" id="js" aria-live="polite">{highlighted(Lang::JavaScript, &self.transpiled)}</pre>
                 </div>
+                <span id="sourcemap" class="sourcemap" aria-hidden="true">{&self.call_sites}</span>
             </>
         }
     }
