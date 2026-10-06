@@ -148,15 +148,38 @@ pub fn lex(src: &str) -> Result<Vec<Token>, ParseError> {
                 while i < chars.len() && chars[i].is_ascii_digit() {
                     i += 1;
                 }
-                if chars.get(i) == Some(&'.') && chars.get(i + 1).map_or(false, |d| d.is_ascii_digit())
-                {
+                let next_is_digit = |at: usize| chars.get(at).map_or(false, |d| d.is_ascii_digit());
+                if chars.get(i) == Some(&'.') && next_is_digit(i + 1) {
+                    err!(
+                        start_line,
+                        start_col,
+                        "{}",
+                        "angka desimal ditulis dengan koma, misalnya 1,5 dan bukan 1.5"
+                    );
+                }
+                // `1,5` is one number: a comma between digits with no space is a decimal point
+                if chars.get(i) == Some(&',') && next_is_digit(i + 1) {
                     i += 1;
                     while i < chars.len() && chars[i].is_ascii_digit() {
                         i += 1;
                     }
+                    // `1,2,3` could be a list or a number: do not guess
+                    if chars.get(i) == Some(&',') && next_is_digit(i + 1) {
+                        let mut end = i;
+                        while end < chars.len() && (chars[end].is_ascii_digit() || chars[end] == ',') {
+                            end += 1;
+                        }
+                        let written: String = chars[begin..end].iter().collect();
+                        err!(
+                            start_line,
+                            start_col,
+                            "angka `{}` bisa dibaca dua cara: beri spasi setelah koma pemisah (1, 2, 3), atau tulis desimal dengan satu koma saja (1,5)",
+                            written
+                        );
+                    }
                 }
                 let text: String = chars[begin..i].iter().collect();
-                text.parse::<f64>().unwrap()
+                text.replace(',', ".").parse::<f64>().unwrap()
             };
             if chars.get(i).map_or(false, |&d| is_ident_part(d)) {
                 err!(start_line, start_col, "angka tidak valid");

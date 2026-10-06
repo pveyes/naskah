@@ -42,6 +42,10 @@ fn print_identifier(i: Identifier) -> String {
 }
 
 fn print_binary_expression(b: Box<BinaryExpression>) -> String {
+    if is_text_add(&b) {
+        let val = *b;
+        return format!("__tambah({}, {})", print_expression(val.left), print_expression(val.right));
+    }
     let val = *b;
     let prec = operator_precedence(&val.operator);
     let right_assoc = val.operator == Operator::Exponentiation;
@@ -117,9 +121,35 @@ fn operator_precedence(op: &Operator) -> u8 {
     }
 }
 
+/// Is this certainly a number? Adding two of those is plain arithmetic.
+fn is_numeric(e: &Expression) -> bool {
+    match e {
+        Expression::Literal(Literal::Number(_)) => true,
+        Expression::UnaryExpression(u) => u.operator == UnaryOperator::Negate,
+        Expression::BinaryExpression(b) => match b.operator {
+            Operator::Substraction
+            | Operator::Multiplication
+            | Operator::Division
+            | Operator::Remainder
+            | Operator::Exponentiation => true,
+            Operator::Addition => is_numeric(&b.left) && is_numeric(&b.right),
+            _ => false,
+        },
+        Expression::Member(m) => m.property == "panjang",
+        _ => false,
+    }
+}
+
+/// Any other `+` might be joining text, and numbers in text are written the Indonesian
+/// way (1,5), which JavaScript does not do by itself. The playground supplies `__tambah`.
+fn is_text_add(b: &BinaryExpression) -> bool {
+    b.operator == Operator::Addition && !(is_numeric(&b.left) && is_numeric(&b.right))
+}
+
 fn precedence(e: &Expression) -> u8 {
     match e {
         Expression::Assignment(_) => PREC_ASSIGNMENT,
+        Expression::BinaryExpression(b) if is_text_add(b) => PREC_ATOM,
         Expression::BinaryExpression(b) => operator_precedence(&b.operator),
         Expression::UnaryExpression(_) | Expression::Await(_) => PREC_UNARY,
         Expression::Block(b) if b.is_async => PREC_UNARY,
@@ -177,6 +207,18 @@ fn property_name(name: &str) -> &str {
 pub const SITE_START: char = '\u{E000}';
 pub const SITE_END: char = '\u{E001}';
 
+/// The same idea for statements: the Naskah line a statement was written on, put in
+/// front of the first JS line it prints to.
+pub const STATEMENT_START: char = '\u{E002}';
+pub const STATEMENT_END: char = '\u{E003}';
+
+fn mark_statement(line: Option<&usize>, printed: String) -> String {
+    match line {
+        Some(&line) if line > 0 => format!("{}{}{}{}", STATEMENT_START, line, STATEMENT_END, printed),
+        _ => printed,
+    }
+}
+
 fn print_call_expression(c: CallExpression) -> String {
     // tunda(ms) is a sleep: a promise that resolves after `ms` milliseconds
     if c.arguments.len() == 1 && matches!(&*c.callee, Expression::Identifier(i) if i.name == "tunda") {
@@ -206,6 +248,14 @@ fn print_object_operand(e: Expression) -> String {
 
 fn print_member_expression(m: Box<MemberExpression>) -> String {
     let m = *m;
+    // `galat.pesan` has to be explained in Indonesian when the error came from JavaScript itself
+    if m.property == "pesan" {
+        return format!("__pesan({})", print_expression(m.object));
+    }
+    print_plain_member(m)
+}
+
+fn print_plain_member(m: MemberExpression) -> String {
     format!("{}.{}", print_object_operand(m.object), property_name(&m.property))
 }
 
@@ -237,7 +287,12 @@ fn print_object(properties: Vec<Property>) -> String {
 }
 
 fn print_assignment_expression(s: AssignmentExpression) -> String {
-    format!("{} = {}", print_expression(*s.target), print_expression(*s.value))
+    // the left side is written to, so `pesan` there is just the property
+    let target = match *s.target {
+        Expression::Member(m) => print_plain_member(*m),
+        other => print_expression(other),
+    };
+    format!("{} = {}", target, print_expression(*s.value))
 }
 
 fn print_new_expression(n: Box<NewExpression>) -> String {
@@ -332,8 +387,14 @@ fn print_template(parts: Vec<TemplatePart>) -> String {
         match part {
             TemplatePart::Text(text) => out.push_str(&template_text(&text)),
             TemplatePart::Expression(e) => {
+                let is_text = matches!(e, Expression::Literal(Literal::String(_)) | Expression::Template(_));
+                let printed = print_expression(e);
                 out.push_str("${");
-                out.push_str(&print_expression(e));
+                if is_text {
+                    out.push_str(&printed);
+                } else {
+                    out.push_str(&format!("__teks({})", printed));
+                }
                 out.push('}');
             }
         }
@@ -386,8 +447,10 @@ fn print_block_statement(b: BlockStatement, depth: u8) -> String {
     let content = match b.body {
         Some(statements) => {
             let mut sts = String::new();
-            for statement in statements {
-                sts.push_str(&print_statement(statement, depth + 1));
+            // lines are only trusted when there is one for every statement
+            let lines = if b.lines.0.len() == statements.len() { b.lines.0 } else { vec![] };
+            for (i, statement) in statements.into_iter().enumerate() {
+                sts.push_str(&mark_statement(lines.get(i), print_statement(statement, depth + 1)));
             }
             sts
         }
@@ -545,6 +608,7 @@ fn print_switch_statement(s: SwitchStatement, depth: u8) -> String {
                     }),
                     Statement::IfStatement(chain),
                 ]),
+                ..Default::default()
             };
             insert_indent(depth) + &print_block_statement(wrapper, depth)
         }
@@ -568,6 +632,7 @@ fn print_class_declaration(c: ClassDeclaration, depth: u8) -> String {
     let mut res = insert_indent(depth);
     res.push_str(&format!("class {}", c.id.name));
     let mut body = c.body;
+    let mut body_lines = c.body_lines.0;
     if let Some(parent) = c.parent {
         res.push_str(&format!(" extends {}", builtin_value(&parent.id.name)));
         // `turunan Hewan(nama)` is the call to the parent's constructor, and comes first
@@ -579,12 +644,14 @@ fn print_class_declaration(c: ClassDeclaration, depth: u8) -> String {
                 line: 0,
             })),
         );
+        // the call to the parent has no line of its own
+        body_lines.insert(0, 0);
     }
     res.push_str(" {\n");
 
     // the statements in the body are the constructor
     if !body.is_empty() {
-        let constructor = BlockStatement { body: Some(body) };
+        let constructor = BlockStatement { body: Some(body), lines: Lines(body_lines) };
         res.push_str(&format!(
             "{}constructor({}) {}\n",
             inner,
@@ -676,8 +743,9 @@ fn print_statement(s: Statement, depth: u8) -> String {
 
 pub fn print(ast: Program) -> String {
     let mut js = String::new();
-    for statement in ast.body {
-        js.push_str(&print_statement(statement, 0));
+    let lines = if ast.lines.0.len() == ast.body.len() { ast.lines.0 } else { vec![] };
+    for (i, statement) in ast.body.into_iter().enumerate() {
+        js.push_str(&mark_statement(lines.get(i), print_statement(statement, 0)));
     }
 
     js
@@ -695,8 +763,7 @@ mod test {
                     name: String::from("x"),
                 },
                 value: Expression::Literal(Literal::Null),
-            })],
-        });
+            })], ..Default::default() });
 
         assert_eq!(&s, &"let x = null;\n")
     }

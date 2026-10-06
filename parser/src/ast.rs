@@ -6,7 +6,7 @@ pub enum Literal {
     Boolean(bool),
 }
 
-#[derive(PartialEq, Debug, Clone)]
+#[derive(PartialEq, Debug, Clone, Default)]
 pub struct Identifier {
     pub name: String,
 }
@@ -193,12 +193,14 @@ pub struct ParentClass {
 ///
 /// The statements in the body make up the constructor, in order. Methods are
 /// collected separately.
-#[derive(PartialEq, Debug, Clone)]
+#[derive(PartialEq, Debug, Clone, Default)]
 pub struct ClassDeclaration {
     pub id: Identifier,
     pub params: Vec<Identifier>,
     pub parent: Option<ParentClass>,
     pub body: Vec<Statement>,
+    /// Source lines of `body`, like `BlockStatement::lines`.
+    pub body_lines: Lines,
     pub methods: Vec<Method>,
 }
 
@@ -267,9 +269,21 @@ pub struct SwitchStatement {
     pub default: Option<BlockStatement>,
 }
 
-#[derive(PartialEq, Debug, Clone)]
+/// The source line (1-based) each statement of a block starts on, in order.
+/// Used for error messages and never takes part in comparing syntax trees.
+#[derive(Debug, Clone, Default)]
+pub struct Lines(pub Vec<usize>);
+
+impl PartialEq for Lines {
+    fn eq(&self, _: &Lines) -> bool {
+        true
+    }
+}
+
+#[derive(PartialEq, Debug, Clone, Default)]
 pub struct BlockStatement {
     pub body: Option<Vec<Statement>>,
+    pub lines: Lines,
 }
 
 #[derive(PartialEq, Debug, Clone)]
@@ -292,7 +306,8 @@ pub enum Statement {
     IfStatement(IfStatement),
 }
 
-#[derive(PartialEq, Debug, Clone)]
+#[derive(PartialEq, Debug, Clone, Default)]
 pub struct Program {
     pub body: Vec<Statement>,
+    pub lines: Lines,
 }

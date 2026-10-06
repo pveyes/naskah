@@ -2,7 +2,8 @@ extern crate parser;
 
 mod js;
 
-use parser::parse;
+use parser::ast::Program;
+use parser::{parse, parse_checked, ParseError};
 
 /// JavaScript plus, for every `tulis(...)`, the line it was written on.
 pub struct Transpiled {
@@ -10,14 +11,28 @@ pub struct Transpiled {
     /// `(js_line, naskah_line)`, both 1-based. If a JS line holds several
     /// `tulis` calls, the first one is recorded.
     pub call_sites: Vec<(usize, usize)>,
+    /// `(js_line, naskah_line)` for the first JS line of every statement, so a
+    /// runtime error can be traced back to the line that was written.
+    pub statement_lines: Vec<(usize, usize)>,
 }
 
 pub fn transpile(s: &str) -> Transpiled {
-    match parse(s) {
+    transpile_with(s, parse)
+}
+
+/// Like `transpile`, but a name that is used and never made is a syntax error. This is
+/// what the playground uses, so a misspelled name is caught before the program runs.
+pub fn transpile_checked(s: &str) -> Transpiled {
+    transpile_with(s, parse_checked)
+}
+
+fn transpile_with(s: &str, read: fn(&str) -> Result<Program, ParseError>) -> Transpiled {
+    match read(s) {
         Ok(ast) => extract_call_sites(&js::print(ast)),
         Err(e) => Transpiled {
             js: format!("// Salah sintaks di {}", e),
             call_sites: vec![],
+            statement_lines: vec![],
         },
     }
 }
@@ -30,27 +45,35 @@ pub fn to_js(s: String) -> String {
 fn extract_call_sites(marked: &str) -> Transpiled {
     let mut js = String::new();
     let mut call_sites = Vec::new();
+    let mut statement_lines = Vec::new();
+    let is_marker = |c: char| c == js::SITE_START || c == js::STATEMENT_START;
 
     for (index, line) in marked.split('\n').enumerate() {
         if index > 0 {
             js.push('\n');
         }
-        let mut recorded = false;
+        let (mut site_done, mut statement_done) = (false, false);
         let mut rest = line;
-        while let Some(start) = rest.find(js::SITE_START) {
+        while let Some(start) = rest.find(is_marker) {
             js.push_str(&rest[..start]);
-            let after = &rest[start + js::SITE_START.len_utf8()..];
-            let end = after.find(js::SITE_END).expect("unterminated call site marker");
-            if !recorded {
-                call_sites.push((index + 1, after[..end].parse().unwrap()));
-                recorded = true;
+            let opener = rest[start..].chars().next().unwrap();
+            let (closer, done, list) = if opener == js::SITE_START {
+                (js::SITE_END, &mut site_done, &mut call_sites)
+            } else {
+                (js::STATEMENT_END, &mut statement_done, &mut statement_lines)
+            };
+            let after = &rest[start + opener.len_utf8()..];
+            let end = after.find(closer).expect("unterminated line marker");
+            if !*done {
+                list.push((index + 1, after[..end].parse().unwrap()));
+                *done = true;
             }
-            rest = &after[end + js::SITE_END.len_utf8()..];
+            rest = &after[end + closer.len_utf8()..];
         }
         js.push_str(rest);
     }
 
-    Transpiled { js, call_sites }
+    Transpiled { js, call_sites, statement_lines }
 }
 
 #[cfg(test)]
@@ -86,7 +109,7 @@ mod test {
     fn functions_and_loops() {
         assert_eq!(
             js("fungsi jumlah(a, b) {\nhasilkan a + b;\n}\nselama benar {\nberhenti;\n}\n"),
-            "function jumlah(a, b) {\n  return a + b;\n}\nwhile (true) {\n  break;\n}\n"
+            "function jumlah(a, b) {\n  return __tambah(a, b);\n}\nwhile (true) {\n  break;\n}\n"
         );
     }
 
@@ -123,7 +146,7 @@ mod test {
 
     #[test]
     fn numbers() {
-        assert_eq!(js("x = 0xff + 1.5 + 0b11;"), "x = 255 + 1.5 + 3;\n");
+        assert_eq!(js("x = 0xff + 1,5 + 0b11;"), "x = 255 + 1.5 + 3;\n");
     }
 
     #[test]
@@ -148,7 +171,7 @@ mod test {
         assert_eq!(js("x = [] == {};"), "x = [] === {};\n");
         assert_eq!(
             js("x = daftar.panjang + daftar[0];"),
-            "x = daftar.length + daftar[0];\n"
+            "x = __tambah(daftar.length, daftar[0]);\n"
         );
         assert_eq!(js("daftar.tambah(4);"), "daftar.push(4);\n");
         assert_eq!(js("x = daftar.gabung(\", \").balik();"), "x = daftar.join(\", \").reverse();\n");
@@ -158,7 +181,7 @@ mod test {
 
     #[test]
     fn member_operands_get_parentheses() {
-        assert_eq!(js("x = (a + b).panjang;"), "x = (a + b).length;\n");
+        assert_eq!(js("x = (a + b).panjang;"), "x = __tambah(a, b).length;\n");
         assert_eq!(js("x = (5).foo;"), "x = (5).foo;\n");
         assert_eq!(js("x = (-a)[0];"), "x = (-a)[0];\n");
         // a statement starting with `{` would be parsed as a block by JS
@@ -231,25 +254,25 @@ mod test {
     fn text_templates() {
         assert_eq!(
             js(r#"s = "Halo, {nama}! {a + 1}";"#),
-            "s = `Halo, ${nama}! ${a + 1}`;\n"
+            "s = `Halo, ${__teks(nama)}! ${__teks(__tambah(a, 1))}`;\n"
         );
-        assert_eq!(js(r#"s = "{xs.panjang} item";"#), "s = `${xs.length} item`;\n");
+        assert_eq!(js(r#"s = "{xs.panjang} item";"#), "s = `${__teks(xs.length)} item`;\n");
         // nested strings and calls inside an interpolation
         assert_eq!(
             js(r#"s = "a {f("x")} b";"#),
-            "s = `a ${f(\"x\")} b`;\n"
+            "s = `a ${__teks(f(\"x\"))} b`;\n"
         );
         // templates inside templates
-        assert_eq!(js(r#"s = "{"[{x}]"}";"#), "s = `${`[${x}]`}`;\n");
+        assert_eq!(js(r#"s = "{"[{x}]"}";"#), "s = `${`[${__teks(x)}]`}`;\n");
     }
 
     #[test]
     fn template_text_is_escaped_for_javascript() {
         // a backtick in the text must not end the literal
-        assert_eq!(js(r#"s = "a`b {c}";"#), "s = `a\\`b ${c}`;\n");
+        assert_eq!(js(r#"s = "a`b {c}";"#), "s = `a\\`b ${__teks(c)}`;\n");
         // `\{` is a literal brace, and `${` in the output must not start an interpolation
-        assert_eq!(js(r#"s = "$\{x} {y}";"#), "s = `\\${x} ${y}`;\n");
-        assert_eq!(js(r#"s = "\{x} {y}";"#), "s = `{x} ${y}`;\n");
+        assert_eq!(js(r#"s = "$\{x} {y}";"#), "s = `\\${x} ${__teks(y)}`;\n");
+        assert_eq!(js(r#"s = "\{x} {y}";"#), "s = `{x} ${__teks(y)}`;\n");
         // a plain string keeps its escape
         assert_eq!(js(r#"s = "\{x}";"#), "s = \"\\{x}\";\n");
         assert_eq!(js(r#"s = "a } b";"#), "s = \"a } b\";\n");
@@ -262,8 +285,8 @@ mod test {
             "async function ambil() {\n  await new Promise((resolve) => setTimeout(resolve, 100));\n  return 1;\n}\nlet x = await ambil();\n"
         );
         assert_eq!(js("x = (tunggu a).b;"), "x = (await a).b;\n");
-        assert_eq!(js("x = tunggu a + b;"), "x = await a + b;\n");
-        assert_eq!(js("x = tunggu (a + b);"), "x = await (a + b);\n");
+        assert_eq!(js("x = tunggu a + b;"), "x = __tambah(await a, b);\n");
+        assert_eq!(js("x = tunggu (a + b);"), "x = await __tambah(a, b);\n");
         // tunda is only the built-in sleep when called with one argument
         assert_eq!(js("tunda(1, 2);"), "tunda(1, 2);\n");
     }
@@ -297,14 +320,16 @@ mod test {
     #[test]
     fn list_helpers_and_errors_use_javascript_names() {
         assert_eq!(js("x = xs.urut().cari(f);"), "x = xs.sort().find(f);\n");
-        assert_eq!(js("x = e.pesan;"), "x = e.message;\n");
+        assert_eq!(js("x = e.pesan;"), "x = __pesan(e);\n");
+        // writing to it is just the property
+        assert_eq!(js("e.pesan = \"baru\";"), "e.message = \"baru\";\n");
     }
 
     #[test]
     fn try_catch_finally_and_throw() {
         assert_eq!(
             js("coba {\nlempar Galat(\"x\");\n} tangkap galat {\ntulis(galat.pesan);\n} akhirnya {\n}"),
-            "try {\n  throw new Error(\"x\");\n} catch (galat) {\n  console.log(galat.message);\n} finally {\n}\n"
+            "try {\n  throw new Error(\"x\");\n} catch (galat) {\n  console.log(__pesan(galat));\n} finally {\n}\n"
         );
         assert_eq!(js("coba {\n} tangkap {\n}"), "try {\n} catch {\n}\n");
         assert_eq!(js("lempar \"teks\";"), "throw \"teks\";\n");
@@ -354,7 +379,7 @@ let k = new Kucing(\"Tom\");
         // `..nama` is the parent's version
         assert_eq!(
             js("Kucing() turunan Hewan() {\nsuara() {\nhasilkan ..suara() + \"!\"\n}\n}"),
-            "class Kucing extends Hewan {\n  constructor() {\n    super();\n  }\n  suara() {\n    return super.suara() + \"!\";\n  }\n}\n"
+            "class Kucing extends Hewan {\n  constructor() {\n    super();\n  }\n  suara() {\n    return __tambah(super.suara(), \"!\");\n  }\n}\n"
         );
         // inside a block the class is indented with it
         assert_eq!(
@@ -364,7 +389,7 @@ let k = new Kucing(\"Tom\");
         // `.nama` is this.nama everywhere in a class, also in callbacks and texts
         assert_eq!(
             js("Hewan() {\nm() {\nxs.peta(fungsi (x) {\nhasilkan x + .base\n})\ntulis(\"{.nama}\")\n}\n}"),
-            "class Hewan {\n  m() {\n    xs.map((x) => {\n      return x + this.base;\n    });\n    console.log(`${this.nama}`);\n  }\n}\n"
+            "class Hewan {\n  m() {\n    xs.map((x) => {\n      return __tambah(x, this.base);\n    });\n    console.log(`${__teks(this.nama)}`);\n  }\n}\n"
         );
     }
 
@@ -376,7 +401,7 @@ let k = new Kucing(\"Tom\");
   constructor(nama) {
     this.nama = (() => {
       let x = 5;
-      return nama + x;
+      return __tambah(nama, x);
     })();
   }
 }
@@ -384,7 +409,7 @@ let k = new Kucing(\"Tom\");
         );
         assert_eq!(
             js("misal v = {\n  misal a = 1\n  hasilkan a + 1\n}"),
-            "let v = (() => {\n  let a = 1;\n  return a + 1;\n})();\n"
+            "let v = (() => {\n  let a = 1;\n  return __tambah(a, 1);\n})();\n"
         );
         // a block that waits makes the function around it async
         assert_eq!(
@@ -393,7 +418,7 @@ let k = new Kucing(\"Tom\");
         );
         assert_eq!(
             js("misal v = 1 + { hasilkan tunggu g() }\n"),
-            "let v = 1 + await (async () => {\n  return await g();\n})();\n"
+            "let v = __tambah(1, await (async () => {\n  return await g();\n})());\n"
         );
         // an object stays an object
         assert_eq!(js("misal o = { a: 1 }"), "let o = { a: 1 };\n");
@@ -426,7 +451,7 @@ let k = new Kucing(\"Tom\");
     fn tunggu_inside_a_template_makes_the_function_async() {
         assert_eq!(
             js("fungsi f() {\ntulis(\"{tunggu g()}\");\n}"),
-            "async function f() {\n  console.log(`${await g()}`);\n}\n"
+            "async function f() {\n  console.log(`${__teks(await g())}`);\n}\n"
         );
     }
 
@@ -440,9 +465,42 @@ let k = new Kucing(\"Tom\");
         let t = transpile("xs.peta(fungsi (x) {\ntulis(x);\n});\ntulis(\"a {x}\");");
         assert_eq!(
             t.js,
-            "xs.map((x) => {\n  console.log(x);\n});\nconsole.log(`a ${x}`);\n"
+            "xs.map((x) => {\n  console.log(x);\n});\nconsole.log(`a ${__teks(x)}`);\n"
         );
         assert_eq!(t.call_sites, vec![(2, 2), (4, 4)]);
+    }
+
+    #[test]
+    fn statement_lines_map_every_statement_to_its_naskah_line() {
+        let t = transpile("misal x = 1\n\njika x {\n  tulis(x)\n\n  x = 2\n}\nfungsi f() {\n  hasilkan 1\n}\n");
+        assert_eq!(
+            t.js,
+            "let x = 1;\nif (x) {\n  console.log(x);\n  x = 2;\n}\nfunction f() {\n  return 1;\n}\n"
+        );
+        assert_eq!(t.statement_lines, vec![(1, 1), (2, 3), (3, 4), (4, 6), (6, 8), (7, 9)]);
+    }
+
+    #[test]
+    fn statement_lines_inside_classes() {
+        let t = transpile("Hewan(n) {\n  .n = n\n  m() {\n    hasilkan 1\n  }\n}");
+        assert_eq!(t.js, "class Hewan {\n  constructor(n) {\n    this.n = n;\n  }\n  m() {\n    return 1;\n  }\n}\n");
+        assert_eq!(t.statement_lines, vec![(1, 1), (3, 2), (6, 4)]);
+
+        // the call to the parent has no line of its own, the statements after it do
+        let t = transpile("Kucing(n) turunan Hewan(n) {\n  .x = 1\n}");
+        assert_eq!(t.js, "class Kucing extends Hewan {\n  constructor(n) {\n    super(n);\n    this.x = 1;\n  }\n}\n");
+        assert_eq!(t.statement_lines, vec![(1, 1), (4, 2)]);
+    }
+
+    #[test]
+    fn statement_lines_survive_switch_and_function_values() {
+        let t = transpile("pilih f() {\n  kalau 1 {\n    tulis(1)\n  }\n}\nxs.peta(fungsi (x) {\n  hasilkan x\n})");
+        assert_eq!(
+            t.js,
+            "{\n  const _pilih0 = f();\n  if (_pilih0 === 1) {\n    console.log(1);\n  }\n}\nxs.map((x) => {\n  return x;\n});\n"
+        );
+        // the switch is one statement, the cases inside it are real ones
+        assert_eq!(t.statement_lines, vec![(1, 1), (4, 3), (7, 6), (8, 7)]);
     }
 
     #[test]
