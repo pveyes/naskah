@@ -1,12 +1,12 @@
 # naskah [![Actions Status](https://github.com/pveyes/naskah/workflows/build/badge.svg)](https://github.com/pveyes/naskah/actions)
 
-> Bahasa pemrograman dengan sintaks Bahasa Indonesia
+> A programming language written in Indonesian
 
-Naskah ditulis dalam Bahasa Indonesia dan diterjemahkan ke JavaScript. Coba langsung di browser: **https://naskah.dev**
+Naskah is written in Indonesian and translated to JavaScript. Try it in the browser: **https://naskah.dev**
 
-Belum pernah membuat program? Mulai dari **[Belajar Naskah](https://naskah.dev/belajar)**: dua belas pelajaran pendek dalam Bahasa Indonesia, dengan contoh yang bisa langsung dijalankan.
+Never written a program before? Start with **[Belajar Naskah](https://naskah.dev/belajar)**: twelve short lessons in Indonesian, with examples you can run on the spot.
 
-## Sekilas
+## At a glance
 
 ```
 Hewan(nama) {
@@ -29,35 +29,35 @@ untuk setiap h dalam daftar {
 }
 ```
 
-| Naskah | Gunanya |
+| Naskah | Purpose |
 |---|---|
-| `misal`, `konstan` | variabel |
-| `jika` / `lain`, `pilih` / `kalau` | percabangan |
-| `selama`, `ulang`, `untuk` | perulangan |
-| `fungsi`, `hasilkan` | fungsi |
-| `tunggu`, `tunda(ms)` | menunggu hasil, tanpa penanda `async` |
-| `coba` / `tangkap` / `akhirnya`, `lempar` | menangani galat |
-| `Hewan(nama) { }`, `.nama`, `..nama` | kelas, objek ini, dan versi induk |
-| `"Halo, {nama}"` | teks dengan sisipan |
+| `misal`, `konstan` | variables |
+| `jika` / `lain`, `pilih` / `kalau` | branching |
+| `selama`, `ulang`, `untuk` | loops |
+| `fungsi`, `hasilkan` | functions |
+| `tunggu`, `tunda(ms)` | wait for a result, no `async` marker |
+| `coba` / `tangkap` / `akhirnya`, `lempar` | error handling |
+| `Hewan(nama) { }`, `.nama`, `..nama` | class, the current object, and the parent's version |
+| `"Halo, {nama}"` | text with interpolation |
 
-Huruf kapital hanya untuk kelas, dan memanggil nama berhuruf kapital selalu membuat objek baru. Titik koma boleh dihilangkan.
+Capital letters are for classes only, and calling a capitalised name always builds a new object. Semicolons are optional.
 
-Penjelasan lengkap ada di **[SYNTAX.md](SYNTAX.md)**.
+The full reference is in **[SYNTAX.md](SYNTAX.md)** (in Indonesian).
 
-## Pengembangan
-
-```sh
-cargo test --workspace   # jalankan test
-./scripts/dev.sh         # build demo dan jalankan di http://localhost:5173
-```
-
-## Penerapan
-
-Demo diterapkan ke Cloudflare Workers dengan CLI [`cf`](https://www.npmjs.com/package/cf). Proyeknya ada di `demo/static`: Vite menyusun situsnya dan `cf deploy` mengunggahnya sebagai Worker bernama `naskah`, yang tersedia di domain khusus `naskah.dev`.
+## Development
 
 ```sh
-cf auth login            # sekali saja
-./scripts/deploy.sh      # build lalu cf deploy
+cargo test --workspace   # run the tests
+./scripts/dev.sh         # build the demo and serve it at http://localhost:5173
 ```
 
-Push ke `master` menerapkannya otomatis lewat GitHub Actions. Ia membutuhkan dua secret di repositori: `CLOUDFLARE_API_TOKEN` dan `CLOUDFLARE_ACCOUNT_ID`.
+## Deployment
+
+The demo is deployed to Cloudflare Workers with the [`cf`](https://www.npmjs.com/package/cf) CLI. The project lives in `demo/static`: Vite builds the site and `cf deploy` uploads it as a Worker named `naskah`, served on the custom domain `naskah.dev`.
+
+```sh
+cf auth login            # once only
+./scripts/deploy.sh      # build, then cf deploy
+```
+
+A push to `master` deploys it automatically through GitHub Actions, which needs two repository secrets: `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`.
