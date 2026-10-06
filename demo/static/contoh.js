@@ -2,14 +2,13 @@
 // a real one (halo.nsk). The name also labels the lines it prints, so a child sees
 // where each line came from.
 
+// imported rather than fetched, so the build puts it into the page's script: a file that
+// nothing imports is not part of the deployed site
+import examples from "./contoh.json";
+
 /** Fill `tabs` from contoh.json. `choose({ file, kode })` is called when one is picked. */
-export async function setupExamples(tabs, choose) {
-  let examples = [];
-  try {
-    examples = await (await fetch("./contoh.json")).json();
-  } catch {
-    return { first: null, clear() {} };
-  }
+export function setupExamples(tabs, choose) {
+  if (examples.length === 0) return { first: null, clear() {} };
 
   const buttons = examples.map((example, index) => {
     const tab = document.createElement("button");

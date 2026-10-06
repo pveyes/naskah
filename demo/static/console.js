@@ -210,7 +210,7 @@ function setProgram(code, file, tries = 100) {
   box.dispatchEvent(new Event("input", { bubbles: true }));
 }
 
-const examples = await setupExamples(document.getElementById("examples"), (example) => {
+const examples = setupExamples(document.getElementById("examples"), (example) => {
   setProgram(example.kode, example.file);
 });
 // the editor starts with the first example
