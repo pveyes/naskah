@@ -97,9 +97,11 @@
               <tr><td><code class="tok-keyword">misal</code></td><td><code class="tok-keyword">let</code></td></tr>
               <tr><td><code class="tok-keyword">konstan</code></td><td><code class="tok-keyword">const</code></td></tr>
               <tr><td><code class="tok-literal">benar</code> / <code class="tok-literal">salah</code> / <code class="tok-literal">kosong</code></td><td><code class="tok-literal">true</code> / <code class="tok-literal">false</code> / <code class="tok-literal">null</code></td></tr>
-              <tr><td><code class="tok-keyword">dan</code> / <code class="tok-keyword">atau</code> / <code class="tok-keyword">bukan</code></td><td><code class="tok-operator">&amp;&amp;</code> / <code class="tok-operator">||</code> / <code class="tok-operator">!</code></td></tr>
+              <tr><td><code class="tok-keyword">dan</code> / <code class="tok-keyword">atau</code></td><td><code class="tok-operator">&amp;&amp;</code> / <code class="tok-operator">||</code></td></tr>
+              <tr><td><code class="tok-keyword">adalah</code> / <code class="tok-keyword">bukan</code></td><td><code class="tok-operator">===</code> / <code class="tok-operator">!==</code></td></tr>
               <tr><td><code class="tok-function">tulis</code>(x)</td><td><code class="tok-function">console.log</code>(x)</td></tr>
               <tr><td><code class="tok-function">tanya</code>(x)</td><td><code class="tok-function">prompt</code>(x)</td></tr>
+              <tr><td><code class="tok-function">tanya</code>(x, Tipe.Angka)</td><td><code class="tok-function">prompt</code>(x, <code class="tok-function">__tipe</code>.Angka)</td></tr>
               <tr><td><code class="tok-function">bilangan</code>(x)</td><td><code class="tok-function">__bilangan</code>(x)</td></tr>
               <tr><td><code class="tok-string">"Halo, {nama}"</code></td><td><code class="tok-string">`Halo, ${nama}`</code></td></tr>
             </tbody>
@@ -111,9 +113,10 @@
             </thead>
             <tbody>
               <tr><td><code class="tok-keyword">jika</code> / <code class="tok-keyword">lain</code></td><td><code class="tok-keyword">if</code> / <code class="tok-keyword">else</code></td></tr>
-              <tr><td><code class="tok-keyword">pilih</code> / <code class="tok-keyword">kalau</code> / <code class="tok-keyword">lain</code></td><td><code class="tok-keyword">if</code> / <code class="tok-keyword">else if</code> / <code class="tok-keyword">else</code></td></tr>
+              <tr><td><code class="tok-keyword">pilih</code> / <code class="tok-keyword">saat</code> / <code class="tok-keyword">lain</code></td><td><code class="tok-keyword">if</code> / <code class="tok-keyword">else if</code> / <code class="tok-keyword">else</code></td></tr>
               <tr><td><code class="tok-keyword">selama</code></td><td><code class="tok-keyword">while</code></td></tr>
               <tr><td><code class="tok-keyword">ulang</code></td><td><code class="tok-keyword">while</code> (true)</td></tr>
+              <tr><td><code class="tok-keyword">ulang</code> { } <code class="tok-keyword">sampai</code> x</td><td><code class="tok-keyword">do</code> { } <code class="tok-keyword">while</code> (!(x))</td></tr>
               <tr><td><code class="tok-keyword">untuk</code> i <code class="tok-keyword">dari</code> 1 <code class="tok-keyword">sampai</code> 9</td><td><code class="tok-keyword">for</code> (i = 1; i &lt;= 9; i++)</td></tr>
               <tr><td><code class="tok-keyword">untuk setiap</code> x <code class="tok-keyword">dalam</code> xs</td><td><code class="tok-keyword">for</code> (x <code class="tok-keyword">of</code> xs)</td></tr>
               <tr><td><code class="tok-keyword">berhenti</code> / <code class="tok-keyword">lanjut</code></td><td><code class="tok-keyword">break</code> / <code class="tok-keyword">continue</code></td></tr>
@@ -169,7 +172,7 @@
               <tr><td>xs.<code class="tok-function">tambah</code>(x)</td><td>xs.<code class="tok-function">push</code>(x)</td></tr>
               <tr><td>xs.<code class="tok-function">gabung</code>(", ")</td><td>xs.<code class="tok-function">join</code>(", ")</td></tr>
               <tr><td>xs.<code class="tok-function">balik</code>()</td><td>xs.<code class="tok-function">reverse</code>()</td></tr>
-              <tr><td>xs.<code class="tok-function">peta</code>(f)</td><td>xs.<code class="tok-function">map</code>(f)</td></tr>
+              <tr><td>xs.<code class="tok-function">ubah</code>(f)</td><td>xs.<code class="tok-function">map</code>(f)</td></tr>
               <tr><td>xs.<code class="tok-function">saring</code>(f)</td><td>xs.<code class="tok-function">filter</code>(f)</td></tr>
               <tr><td>xs.<code class="tok-function">cari</code>(f)</td><td>xs.<code class="tok-function">find</code>(f)</td></tr>
               <tr><td>xs.<code class="tok-function">urut</code>()</td><td>xs.<code class="tok-function">sort</code>()</td></tr>

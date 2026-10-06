@@ -4,18 +4,18 @@ use std::collections::HashSet;
 
 type Result<T> = std::result::Result<T, ParseError>;
 
-// `setiap`, `dari`, `sampai`, `langkah`, `dalam` and `turunan` are only special
+// `setiap`, `dari`, `sampai`, `dalam` and `turunan` are only special
 // in one place, so they stay usable as names.
-const RESERVED: [&str; 24] = [
-    "misal", "konstan", "jika", "lain", "selama", "ulang", "untuk", "pilih", "kalau", "berhenti",
-    "lanjut", "fungsi", "hasilkan", "benar", "salah", "kosong", "dan", "atau", "bukan", "coba",
-    "tangkap", "akhirnya", "lempar", "tunggu",
+const RESERVED: [&str; 25] = [
+    "misal", "konstan", "jika", "lain", "selama", "ulang", "untuk", "pilih", "saat", "berhenti",
+    "lanjut", "fungsi", "hasilkan", "benar", "salah", "kosong", "dan", "atau", "adalah", "bukan",
+    "coba", "tangkap", "akhirnya", "lempar", "tunggu",
 ];
 
 /// Names a program can use without declaring them: the Naskah built-ins, and the
 /// JavaScript globals that keep working for now.
-const GLOBALS: [&str; 36] = [
-    "tulis", "tanya", "tunda", "bilangan", "Galat", "Math", "JSON", "Date", "Number", "String", "Array",
+const GLOBALS: [&str; 37] = [
+    "tulis", "tanya", "tunda", "bilangan", "Tipe", "Galat", "Math", "JSON", "Date", "Number", "String", "Array",
     "Object", "Boolean", "Promise", "Symbol", "Map", "Set", "RegExp", "Intl", "Error", "TypeError",
     "RangeError", "ReferenceError", "SyntaxError", "parseInt", "parseFloat", "isNaN", "isFinite",
     "NaN", "Infinity", "undefined", "console", "setTimeout", "setInterval", "clearTimeout", "clearInterval",
@@ -45,6 +45,8 @@ struct Parser {
     in_class: bool,
     /// How many `(`, `[` or `{` are open. Line breaks only end a statement outside of them.
     nesting: usize,
+    /// Set to the nesting level of a `saat` line, where a bare `/` means "or", not divide.
+    or_slash: Option<usize>,
     scopes: Vec<Scope>,
     scope: usize,
     references: Vec<Reference>,
@@ -69,6 +71,7 @@ impl Parser {
             saw_await: false,
             in_class,
             nesting,
+            or_slash: None,
             scopes: vec![Scope { names: HashSet::new(), parent: None }],
             scope: 0,
             references: Vec::new(),
@@ -344,6 +347,7 @@ impl Parser {
         self.push_scope();
         // a block is its own world: line breaks end statements again, even inside brackets
         let outer_nesting = std::mem::replace(&mut self.nesting, 0);
+        let outer_slash = self.or_slash.take();
         let mut statements = Vec::new();
         let mut lines = Vec::new();
         while !self.is_punct("}") {
@@ -356,6 +360,7 @@ impl Parser {
         self.advance();
         self.pop_scope();
         self.nesting = outer_nesting;
+        self.or_slash = outer_slash;
         Ok(BlockStatement {
             body: if statements.is_empty() { None } else { Some(statements) },
             lines: Lines(lines),
@@ -432,7 +437,13 @@ impl Parser {
         }
 
         if self.eat_word("ulang") {
-            return Ok(Statement::Loop(self.block()?));
+            let body = self.block()?;
+            if self.same_line() && self.eat_word("sampai") {
+                let test = self.expression()?;
+                self.end_statement()?;
+                return Ok(Statement::Until(UntilStatement { body, test }));
+            }
+            return Ok(Statement::Loop(body));
         }
 
         if self.eat_word("untuk") {
@@ -639,10 +650,27 @@ impl Parser {
         let from = self.expression()?;
         self.expect_word("sampai")?;
         let to = self.expression()?;
-        let step = if self.eat_word("langkah") { Some(self.expression()?) } else { None };
+        if self.is_word("langkah") {
+            return self.error(String::from(
+                "`untuk` selalu menghitung naik satu per satu. Untuk hitungan lain, pakai `selama`",
+            ));
+        }
         let body = self.block()?;
         self.pop_scope();
-        Ok(Statement::ForRange(ForRangeStatement { var, from, to, step, body }))
+        Ok(Statement::ForRange(ForRangeStatement { var, from, to, body }))
+    }
+
+    /// The body of a `saat` or of the `lain` of a `pilih`: a `{ }` block, or a single
+    /// statement on the same line.
+    fn case_body(&mut self) -> Result<BlockStatement> {
+        if self.is_punct("{") || !self.same_line() || matches!(self.peek(), Tok::Eof | Tok::Punct("}")) {
+            return self.block();
+        }
+        let line = self.tokens[self.pos].line;
+        self.push_scope();
+        let statement = self.statement();
+        self.pop_scope();
+        Ok(BlockStatement { body: Some(vec![statement?]), lines: Lines(vec![line]) })
     }
 
     fn switch_statement(&mut self) -> Result<Statement> {
@@ -652,15 +680,33 @@ impl Parser {
         let mut cases = Vec::new();
         let mut default = None;
         loop {
-            if self.eat_word("kalau") {
-                let mut tests = vec![self.expression()?];
-                while self.eat_punct(",") {
-                    tests.push(self.expression()?);
+            if self.eat_word("saat") {
+                // a bare `/` between the values means "or", so it is not a division here
+                let outer_slash = self.or_slash.replace(self.nesting);
+                let mut tests = Vec::new();
+                loop {
+                    match self.expression() {
+                        Ok(test) => tests.push(test),
+                        Err(e) => {
+                            self.or_slash = outer_slash;
+                            return Err(e);
+                        }
+                    }
+                    if self.same_line() && self.eat_punct("/") {
+                        continue;
+                    }
+                    break;
                 }
-                let body = self.block()?;
+                self.or_slash = outer_slash;
+                if self.is_punct(",") {
+                    return self.error(String::from(
+                        "pisahkan nilai di `saat` dengan `/`, misalnya `saat 1 / 2 {`",
+                    ));
+                }
+                let body = self.case_body()?;
                 cases.push(SwitchCase { tests, body });
             } else if self.eat_word("lain") {
-                default = Some(self.block()?);
+                default = Some(self.case_body()?);
                 break;
             } else {
                 break;
@@ -669,7 +715,7 @@ impl Parser {
 
         if cases.is_empty() {
             return self.error(format!(
-                "`pilih` membutuhkan minimal satu `kalau`, ditemukan {}",
+                "`pilih` membutuhkan minimal satu `saat`, ditemukan {}",
                 describe(self.peek())
             ));
         }
@@ -681,7 +727,7 @@ impl Parser {
         self.advance(); // jika
         let mut test = self.expression()?;
 
-        // shorthand: `jika x benar {` means `jika x == benar {`
+        // shorthand: `jika x benar {` means `jika x adalah benar {`
         for (word, literal) in &[("benar", true), ("salah", false)] {
             if self.eat_word(word) {
                 test = equal(test, Literal::Boolean(*literal));
@@ -706,7 +752,7 @@ impl Parser {
     }
 
     // expressions, from lowest to highest precedence:
-    //   =  <  atau  <  dan  <  bukan  <  == !=  <  < > <= >=  <  + -  <  * / %  <  - (unary)  <  ^
+    //   =  <  atau  <  dan  <  adalah bukan  <  < > <= >=  <  + -  <  * / %  <  - (unary)  <  ^
 
     fn expression(&mut self) -> Result<Expression> {
         let left = self.or()?;
@@ -739,29 +785,31 @@ impl Parser {
     }
 
     fn and(&mut self) -> Result<Expression> {
-        let mut left = self.not()?;
+        let mut left = self.equality()?;
         while self.same_line() && self.eat_word("dan") {
-            let right = self.not()?;
+            let right = self.equality()?;
             left = binary(left, Operator::And, right);
         }
         Ok(left)
     }
 
-    fn not(&mut self) -> Result<Expression> {
-        if self.eat_word("bukan") {
-            let argument = self.not()?;
-            return Ok(unary(UnaryOperator::Not, argument));
-        }
-        self.equality()
-    }
-
     fn equality(&mut self) -> Result<Expression> {
         let mut left = self.comparison()?;
         loop {
-            let op = if self.eat_op("==") {
+            let op = if self.same_line() && self.eat_word("adalah") {
                 Operator::Equal
-            } else if self.eat_op("!=") {
+            } else if self.same_line() && self.eat_word("bukan") {
                 Operator::NotEqual
+            } else if self.same_line() && (self.is_punct("==") || self.is_punct("!=")) {
+                let (written, instead) = if self.is_punct("==") {
+                    ("==", "x adalah 2")
+                } else {
+                    ("!=", "x bukan 2")
+                };
+                return self.error(format!(
+                    "`{}` tidak dipakai di Naskah, tulis dengan kata: `{}`",
+                    written, instead
+                ));
             } else {
                 return Ok(left);
             };
@@ -809,7 +857,7 @@ impl Parser {
         loop {
             let op = if self.eat_op("*") {
                 Operator::Multiplication
-            } else if self.eat_op("/") {
+            } else if self.or_slash != Some(self.nesting) && self.eat_op("/") {
                 Operator::Division
             } else if self.eat_op("%") {
                 Operator::Remainder
@@ -822,6 +870,11 @@ impl Parser {
     }
 
     fn unary(&mut self) -> Result<Expression> {
+        if self.is_word("bukan") {
+            return self.error(String::from(
+                "`bukan` ditulis di antara dua nilai, misalnya `x bukan 3`. Untuk memeriksa salah, tulis `x adalah salah`",
+            ));
+        }
         if self.eat_word("tunggu") {
             self.saw_await = true;
             let argument = self.unary()?;
@@ -1393,15 +1446,34 @@ mod test {
             expr("a atau b dan c"),
             bin(ident("a"), Operator::Or, bin(ident("b"), Operator::And, ident("c")))
         );
-        // bukan binds looser than comparison: bukan a == b  ==  bukan (a == b)
+        // adalah and bukan bind looser than comparison but tighter than dan
         assert_eq!(
-            expr("bukan a == b"),
-            unary(UnaryOperator::Not, bin(ident("a"), Operator::Equal, ident("b")))
+            expr("a adalah b dan c bukan d"),
+            bin(
+                bin(ident("a"), Operator::Equal, ident("b")),
+                Operator::And,
+                bin(ident("c"), Operator::NotEqual, ident("d"))
+            )
         );
-        // ... but tighter than dan
         assert_eq!(
-            expr("bukan a dan b"),
-            bin(unary(UnaryOperator::Not, ident("a")), Operator::And, ident("b"))
+            expr("a < b adalah c"),
+            bin(bin(ident("a"), Operator::LessThan, ident("b")), Operator::Equal, ident("c"))
+        );
+    }
+
+    #[test]
+    fn old_equality_and_not_are_errors() {
+        assert_eq!(
+            err("x = a == b"),
+            "baris 1, kolom 7: `==` tidak dipakai di Naskah, tulis dengan kata: `x adalah 2`"
+        );
+        assert_eq!(
+            err("x = a != b"),
+            "baris 1, kolom 7: `!=` tidak dipakai di Naskah, tulis dengan kata: `x bukan 2`"
+        );
+        assert_eq!(
+            err("x = bukan a"),
+            "baris 1, kolom 5: `bukan` ditulis di antara dua nilai, misalnya `x bukan 3`. Untuk memeriksa salah, tulis `x adalah salah`"
         );
     }
 
@@ -1419,8 +1491,8 @@ mod test {
             expr("x = x ^ 5"),
             assign(ident("x"), bin(ident("x"), Operator::Exponentiation, num(5.0)))
         );
-        // == is a comparison, not an assignment
-        assert_eq!(expr("x == 1"), bin(ident("x"), Operator::Equal, num(1.0)));
+        // adalah is a comparison, not an assignment
+        assert_eq!(expr("x adalah 1"), bin(ident("x"), Operator::Equal, num(1.0)));
     }
 
     #[test]
@@ -1511,6 +1583,7 @@ mod test {
     #[test]
     fn the_naskah_built_ins_need_no_declaration() {
         assert_eq!(checked("misal nama = tanya(\"Siapa?\")\ntulis(bilangan(nama))\ntunda(1)"), Ok(()));
+        assert_eq!(checked("misal umur = tanya(\"Umur?\", Tipe.Angka)\ntulis(umur)"), Ok(()));
         // and are offered when a name looks like a misspelling of one
         assert_eq!(
             checked("tulis(bilngan(\"1\"))"),
@@ -1596,7 +1669,7 @@ mod test {
     #[test]
     fn if_else_chain() {
         assert_eq!(
-            ok("jika c == 2 {\n} lain jika d benar {\n} lain {\n}"),
+            ok("jika c adalah 2 {\n} lain jika d benar {\n} lain {\n}"),
             vec![Statement::IfStatement(IfStatement {
                 test: bin(ident("c"), Operator::Equal, num(2.0)),
                 consequent: BlockStatement { body: None, ..Default::default() },
@@ -1611,9 +1684,63 @@ mod test {
 
     #[test]
     fn if_shorthand_equals_explicit_comparison() {
-        assert_eq!(ok("jika a benar {\n}"), ok("jika a == benar {\n}"));
-        assert_eq!(ok("jika a salah {\n} lain {\n}"), ok("jika a == salah {\n} lain {\n}"));
-        assert_eq!(ok("jika a kosong {\n}"), ok("jika a == kosong {\n}"));
+        assert_eq!(ok("jika a benar {\n}"), ok("jika a adalah benar {\n}"));
+        assert_eq!(ok("jika a salah {\n} lain {\n}"), ok("jika a adalah salah {\n} lain {\n}"));
+        assert_eq!(ok("jika a kosong {\n}"), ok("jika a adalah kosong {\n}"));
+    }
+
+    #[test]
+    fn saat_values_are_separated_by_slash() {
+        let cases = |src: &str| match ok(src).remove(0) {
+            Statement::Switch(s) => s.cases[0].tests.clone(),
+            other => panic!("{:?}", other),
+        };
+        assert_eq!(cases("pilih x {\n saat 1 / 2 / 3 { }\n}"), vec![num(1.0), num(2.0), num(3.0)]);
+        // division still works inside brackets
+        assert_eq!(
+            cases("pilih x {\n saat (6 / 2) / 5 { }\n}"),
+            vec![bin(num(6.0), Operator::Division, num(2.0)), num(5.0)]
+        );
+        // and outside `saat`
+        assert_eq!(expr("6 / 2"), bin(num(6.0), Operator::Division, num(2.0)));
+        assert_eq!(
+            err("pilih x {\n saat 1, 2 { }\n}"),
+            "baris 2, kolom 8: pisahkan nilai di `saat` dengan `/`, misalnya `saat 1 / 2 {`"
+        );
+    }
+
+    #[test]
+    fn saat_body_without_braces() {
+        assert_eq!(
+            ok("pilih x {\n saat 1 / 2 berhenti\n lain lanjut\n}"),
+            ok("pilih x {\n saat 1 / 2 { berhenti }\n lain { lanjut }\n}")
+        );
+        // a body on the next line still needs braces
+        assert_eq!(
+            err("pilih x {\n saat 1\n  berhenti\n}"),
+            "baris 3, kolom 3: diharapkan `{`, ditemukan `berhenti`"
+        );
+    }
+
+    #[test]
+    fn repeat_until() {
+        assert_eq!(
+            ok("ulang {\n x = x + 1\n} sampai x >= 5"),
+            vec![Statement::Until(UntilStatement {
+                body: BlockStatement {
+                    body: Some(vec![Statement::Expression(assign(
+                        ident("x"),
+                        bin(ident("x"), Operator::Addition, num(1.0))
+                    ))]), ..Default::default() },
+                test: bin(ident("x"), Operator::GreaterThanOrEqualTo, num(5.0)),
+            })]
+        );
+        // `sampai` on its own line does not belong to the loop before it
+        assert_eq!(err("ulang {\n berhenti\n}\nsampai x"), "baris 4, kolom 8: diharapkan `;` atau baris baru, ditemukan `x`");
+        assert_eq!(
+            err("ulang {\n} sampai"),
+            "baris 2, kolom 9: ekspresi tidak lengkap, ditemukan akhir kode"
+        );
     }
 
     #[test]
@@ -1794,19 +1921,21 @@ mod test {
                 var: id("i"),
                 from: num(1.0),
                 to: num(10.0),
-                step: None,
                 body: block(vec![]),
             })]
         );
         assert_eq!(
-            ok("untuk i dari n sampai 0 langkah -2 { berhenti; }"),
+            ok("untuk i dari n sampai 0 { berhenti; }"),
             vec![Statement::ForRange(ForRangeStatement {
                 var: id("i"),
                 from: ident("n"),
                 to: num(0.0),
-                step: Some(unary(UnaryOperator::Negate, num(2.0))),
                 body: block(vec![Statement::Break]),
             })]
+        );
+        assert_eq!(
+            err("untuk i dari 1 sampai 9 langkah 2 { }"),
+            "baris 1, kolom 25: `untuk` selalu menghitung naik satu per satu. Untuk hitungan lain, pakai `selama`"
         );
         assert_eq!(
             err("untuk i dari 1 { }"),
@@ -1840,7 +1969,7 @@ mod test {
     #[test]
     fn switch() {
         assert_eq!(
-            ok("pilih x {\n kalau 1, 2 { berhenti; }\n kalau \"a\" { }\n lain { lanjut; }\n}"),
+            ok("pilih x {\n saat 1 / 2 { berhenti; }\n saat \"a\" { }\n lain { lanjut; }\n}"),
             vec![Statement::Switch(SwitchStatement {
                 discriminant: ident("x"),
                 cases: vec![
@@ -1852,12 +1981,12 @@ mod test {
         );
         assert_eq!(
             err("pilih x { }"),
-            "baris 1, kolom 11: `pilih` membutuhkan minimal satu `kalau`, ditemukan `}`"
+            "baris 1, kolom 11: `pilih` membutuhkan minimal satu `saat`, ditemukan `}`"
         );
         // lain has to be last
         assert_eq!(
-            err("pilih x { kalau 1 { } lain { } kalau 2 { } }"),
-            "baris 1, kolom 32: diharapkan `}`, ditemukan `kalau`"
+            err("pilih x { saat 1 { } lain { } saat 2 { } }"),
+            "baris 1, kolom 31: diharapkan `}`, ditemukan `saat`"
         );
     }
 
@@ -1929,9 +2058,9 @@ mod test {
     #[test]
     fn function_values() {
         assert_eq!(
-            expr("xs.peta(fungsi (x) { hasilkan x; })"),
+            expr("xs.ubah(fungsi (x) { hasilkan x; })"),
             Expression::CallExpression(CallExpression {
-                callee: Box::new(member(ident("xs"), "peta")),
+                callee: Box::new(member(ident("xs"), "ubah")),
                 arguments: vec![Expression::Function(Box::new(FunctionExpression {
                     params: vec![id("x")],
                     body: block(vec![Statement::Return(Some(ident("x")))]),

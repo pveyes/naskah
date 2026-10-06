@@ -105,6 +105,10 @@ mod test {
             js("misal umur = bilangan(tanya(\"Umur?\"))"),
             "let umur = __bilangan(prompt(\"Umur?\"));\n"
         );
+        assert_eq!(
+            js("misal umur = tanya(\"Umur?\", Tipe.Angka)"),
+            "let umur = prompt(\"Umur?\", __tipe.Angka);\n"
+        );
         // a name that merely contains the word is left alone
         assert_eq!(js("misal bilangan2 = 1"), "let bilangan2 = 1;\n");
     }
@@ -127,6 +131,22 @@ mod test {
     }
 
     #[test]
+    fn saat_without_braces() {
+        assert_eq!(
+            js("pilih x {\nsaat 1 / 2 tulis(\"a\")\nlain tulis(\"b\")\n}"),
+            "if (x === 1 || x === 2) {\n  console.log(\"a\");\n} else {\n  console.log(\"b\");\n}\n"
+        );
+    }
+
+    #[test]
+    fn repeat_until() {
+        assert_eq!(
+            js("misal x = 0\nulang {\nx = x + 1\n} sampai x >= 5\ntulis(x)"),
+            "let x = 0;\ndo {\n  x = __tambah(x, 1);\n} while (!(x >= 5));\nconsole.log(x);\n"
+        );
+    }
+
+    #[test]
     fn if_else_chain() {
         assert_eq!(
             js("jika a benar {\nlanjut;\n} lain jika b {\n} lain {\n}"),
@@ -138,8 +158,8 @@ mod test {
     fn logic_operators() {
         assert_eq!(js("x = a dan b atau c;"), "x = a && b || c;\n");
         assert_eq!(js("x = a dan (b atau c);"), "x = a && (b || c);\n");
-        assert_eq!(js("x = bukan a == b;"), "x = !(a === b);\n");
-        assert_eq!(js("x = bukan a dan b;"), "x = !a && b;\n");
+        assert_eq!(js("x = a bukan b;"), "x = a !== b;\n");
+        assert_eq!(js("x = a adalah b dan c;"), "x = a === b && c;\n");
     }
 
     #[test]
@@ -181,7 +201,7 @@ mod test {
             js("misal o = { nama: \"Budi\", panjang: 3, \"a b\": [1, 2] };"),
             "let o = { nama: \"Budi\", length: 3, \"a b\": [1, 2] };\n"
         );
-        assert_eq!(js("x = [] == {};"), "x = [] === {};\n");
+        assert_eq!(js("x = [] adalah {};"), "x = [] === {};\n");
         assert_eq!(
             js("x = daftar.panjang + daftar[0];"),
             "x = __tambah(daftar.length, daftar[0]);\n"
@@ -208,14 +228,6 @@ mod test {
             "for (let i = 1; i <= 3; i++) {\n  console.log(i);\n}\n"
         );
         assert_eq!(
-            js("untuk i dari 10 sampai 0 langkah -2 {\n}"),
-            "for (let i = 10; i >= 0; i += -2) {\n}\n"
-        );
-        assert_eq!(
-            js("untuk i dari 0 sampai 9 langkah 3 {\n}"),
-            "for (let i = 0; i <= 9; i += 3) {\n}\n"
-        );
-        assert_eq!(
             js("untuk setiap x dalam [1, 2] {\nlanjut;\n}"),
             "for (let x of [1, 2]) {\n  continue;\n}\n"
         );
@@ -224,7 +236,7 @@ mod test {
     #[test]
     fn switch_is_an_if_chain() {
         assert_eq!(
-            js("pilih x {\nkalau 1, 2 {\ntulis(\"a\");\n}\nkalau 3 {\n}\nlain {\nberhenti;\n}\n}"),
+            js("pilih x {\nsaat 1 / 2 {\ntulis(\"a\");\n}\nsaat 3 {\n}\nlain {\nberhenti;\n}\n}"),
             "if (x === 1 || x === 2) {\n  console.log(\"a\");\n} else if (x === 3) {\n} else {\n  break;\n}\n"
         );
     }
@@ -232,12 +244,12 @@ mod test {
     #[test]
     fn switch_on_an_expression_evaluates_it_once() {
         assert_eq!(
-            js("pilih f() {\nkalau 1 {\n}\n}"),
+            js("pilih f() {\nsaat 1 {\n}\n}"),
             "{\n  const _pilih0 = f();\n  if (_pilih0 === 1) {\n  }\n}\n"
         );
         // nested switches get distinct names
         assert_eq!(
-            js("pilih f() {\nkalau 1 {\npilih g() {\nkalau 2 {\n}\n}\n}\n}"),
+            js("pilih f() {\nsaat 1 {\npilih g() {\nsaat 2 {\n}\n}\n}\n}"),
             "{\n  const _pilih0 = f();\n  if (_pilih0 === 1) {\n    {\n      const _pilih2 = g();\n      if (_pilih2 === 2) {\n      }\n    }\n  }\n}\n"
         );
     }
@@ -307,7 +319,7 @@ mod test {
     #[test]
     fn function_values_are_arrow_functions() {
         assert_eq!(
-            js("xs.peta(fungsi (x) {\nhasilkan x * 2;\n});"),
+            js("xs.ubah(fungsi (x) {\nhasilkan x * 2;\n});"),
             "xs.map((x) => {\n  return x * 2;\n});\n"
         );
         assert_eq!(
@@ -401,7 +413,7 @@ let k = new Kucing(\"Tom\");
         );
         // `.nama` is this.nama everywhere in a class, also in callbacks and texts
         assert_eq!(
-            js("Hewan() {\nm() {\nxs.peta(fungsi (x) {\nhasilkan x + .base\n})\ntulis(\"{.nama}\")\n}\n}"),
+            js("Hewan() {\nm() {\nxs.ubah(fungsi (x) {\nhasilkan x + .base\n})\ntulis(\"{.nama}\")\n}\n}"),
             "class Hewan {\n  m() {\n    xs.map((x) => {\n      return __tambah(x, this.base);\n    });\n    console.log(`${__teks(this.nama)}`);\n  }\n}\n"
         );
     }
@@ -475,7 +487,7 @@ let k = new Kucing(\"Tom\");
 
     #[test]
     fn call_sites_inside_function_values_and_templates() {
-        let t = transpile("xs.peta(fungsi (x) {\ntulis(x);\n});\ntulis(\"a {x}\");");
+        let t = transpile("xs.ubah(fungsi (x) {\ntulis(x);\n});\ntulis(\"a {x}\");");
         assert_eq!(
             t.js,
             "xs.map((x) => {\n  console.log(x);\n});\nconsole.log(`a ${__teks(x)}`);\n"
@@ -507,7 +519,7 @@ let k = new Kucing(\"Tom\");
 
     #[test]
     fn statement_lines_survive_switch_and_function_values() {
-        let t = transpile("pilih f() {\n  kalau 1 {\n    tulis(1)\n  }\n}\nxs.peta(fungsi (x) {\n  hasilkan x\n})");
+        let t = transpile("pilih f() {\n  saat 1 {\n    tulis(1)\n  }\n}\nxs.ubah(fungsi (x) {\n  hasilkan x\n})");
         assert_eq!(
             t.js,
             "{\n  const _pilih0 = f();\n  if (_pilih0 === 1) {\n    console.log(1);\n  }\n}\nxs.map((x) => {\n  return x;\n});\n"

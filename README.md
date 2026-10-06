@@ -32,7 +32,7 @@ untuk setiap h dalam daftar {
 | Naskah | Purpose |
 |---|---|
 | `misal`, `konstan` | variables |
-| `jika` / `lain`, `pilih` / `kalau` | branching |
+| `jika` / `lain`, `pilih` / `saat` | branching |
 | `selama`, `ulang`, `untuk` | loops |
 | `fungsi`, `hasilkan` | functions |
 | `tunggu`, `tunda(ms)` | wait for a result, no `async` marker |

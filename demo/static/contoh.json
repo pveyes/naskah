@@ -4,19 +4,19 @@
     "kode": "misal nama = \"Dunia\"\ntulis(\"Halo, {nama}!\")"
   },
   {
-    "file": "jika.nsk",
-    "kode": "misal nilai = 80\njika nilai >= 75 {\n  tulis(\"Lulus!\")\n} lain {\n  tulis(\"Belajar lagi, ya.\")\n}"
+    "file": "libur.nsk",
+    "kode": "misal hari = \"Sabtu\"\nmisal nilai = 80\n\njika hari adalah \"Sabtu\" atau hari adalah \"Minggu\" {\n  tulis(\"Hari ini libur.\")\n} lain {\n  tulis(\"Hari ini sekolah.\")\n}\n\npilih hari {\n  saat \"Sabtu\" / \"Minggu\" {\n    tulis(\"Waktunya bermain.\")\n  }\n  saat \"Jumat\" {\n    tulis(\"Besok libur.\")\n  }\n  lain {\n    tulis(\"Jangan lupa PR.\")\n  }\n}\n\njika nilai >= 75 dan hari bukan \"Jumat\" {\n  tulis(\"Lulus!\")\n} lain {\n  tulis(\"Belajar lagi, ya.\")\n}\n\npilih nilai {\n  saat 100 tulis(\"Sempurna!\")\n  saat 80 / 90 tulis(\"Bagus sekali.\")\n  lain tulis(\"Terus berlatih.\")\n}"
   },
   {
-    "file": "ulang.nsk",
-    "kode": "misal buah = [\"apel\", \"jeruk\", \"mangga\"]\nuntuk setiap b dalam buah {\n  tulis(\"Aku suka {b}\")\n}"
+    "file": "belanja.nsk",
+    "kode": "misal belanja = [\n  { nama: \"apel\", harga: 3000 },\n  { nama: \"jeruk\", harga: 2500 },\n  { nama: \"mangga\", harga: 5000 }\n]\n\nmisal total = 0\nuntuk setiap barang dalam belanja {\n  tulis(\"{barang.nama}: {barang.harga}\")\n  total = total + barang.harga\n}\ntulis(\"Total: {total}\")\n\nmisal uang = 10000\nmisal hari = 0\nulang {\n  uang = uang + 1500\n  hari = hari + 1\n} sampai uang >= total\ntulis(\"Cukup setelah {hari} hari menabung.\")"
   },
   {
-    "file": "tanya.nsk",
-    "kode": "misal nama = tanya(\"Siapa namamu?\")\nmisal umur = bilangan(tanya(\"Umurmu berapa?\"))\n\njika umur >= 7 {\n  tulis(\"Halo, {nama}! Kamu sudah SD.\")\n} lain {\n  tulis(\"Halo, {nama}! Sebentar lagi SD.\")\n}"
+    "file": "jenjang.nsk",
+    "kode": "fungsi jenjang(umur) {\n  jika umur < 7 {\n    hasilkan \"TK\"\n  } lain jika umur <= 12 {\n    hasilkan \"SD\"\n  } lain {\n    hasilkan \"SMP atau lebih\"\n  }\n}\n\nmisal nama = tanya(\"Siapa namamu?\")\nmisal umur = tanya(\"Umurmu berapa?\", Tipe.Angka)\n\njika umur kosong {\n  tulis(\"Maaf, {nama}, itu bukan angka.\")\n} lain {\n  tulis(\"{nama}, kamu cocok di {jenjang(umur)}.\")\n}"
   },
   {
-    "file": "kelas.nsk",
-    "kode": "Hewan(nama) {\n  .nama = nama\n\n  suara() {\n    hasilkan \"...\"\n  }\n}\n\nKucing(nama) turunan Hewan(nama) {\n  suara() {\n    hasilkan \"meong\"\n  }\n}\n\nmisal tom = Kucing(\"Tom\")\ntulis(\"{tom.nama} bilang {tom.suara()}\")"
+    "file": "hewan.nsk",
+    "kode": "Hewan(nama) {\n  .nama = nama\n\n  suara() {\n    hasilkan \"...\"\n  }\n}\n\nKucing(nama) turunan Hewan(nama) {\n  suara() {\n    hasilkan \"meong\"\n  }\n}\n\nAnjing(nama) turunan Hewan(nama) {\n  suara() {\n    hasilkan \"guk, bukan {..suara()}\"\n  }\n}\n\nmisal kebun = [Kucing(\"Tom\"), Anjing(\"Bobi\"), Hewan(\"Kiki\")]\nuntuk setiap hewan dalam kebun {\n  jika hewan.nama bukan \"Kiki\" {\n    tulis(\"{hewan.nama} bilang {hewan.suara()}\")\n  }\n}"
   }
 ]

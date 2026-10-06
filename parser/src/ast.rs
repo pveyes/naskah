@@ -56,8 +56,6 @@ pub struct Property {
 
 #[derive(PartialEq, Debug, Clone)]
 pub enum UnaryOperator {
-    /// `bukan`
-    Not,
     /// `-`
     Negate,
 }
@@ -231,19 +229,25 @@ pub struct IfStatement {
     pub alternate: Option<AlternateStatement>,
 }
 
+/// `ulang { } sampai kondisi`: the body runs, then the loop stops once the condition is true
+#[derive(PartialEq, Debug, Clone)]
+pub struct UntilStatement {
+    pub body: BlockStatement,
+    pub test: Expression,
+}
+
 #[derive(PartialEq, Debug, Clone)]
 pub struct WhileStatement {
     pub test: Expression,
     pub body: BlockStatement,
 }
 
-/// `untuk i dari 1 sampai 10 langkah 2 { }`, both ends inclusive
+/// `untuk i dari 1 sampai 10 { }`, both ends inclusive
 #[derive(PartialEq, Debug, Clone)]
 pub struct ForRangeStatement {
     pub var: Identifier,
     pub from: Expression,
     pub to: Expression,
-    pub step: Option<Expression>,
     pub body: BlockStatement,
 }
 
@@ -261,7 +265,7 @@ pub struct SwitchCase {
     pub body: BlockStatement,
 }
 
-/// `pilih x { kalau 1, 2 { } lain { } }`
+/// `pilih x { saat 1, 2 { } lain { } }`
 #[derive(PartialEq, Debug, Clone)]
 pub struct SwitchStatement {
     pub discriminant: Expression,
@@ -299,6 +303,7 @@ pub enum Statement {
     Throw(Expression),
     BlockStatement(BlockStatement),
     Loop(BlockStatement),
+    Until(UntilStatement),
     While(WhileStatement),
     ForRange(ForRangeStatement),
     ForEach(ForEachStatement),

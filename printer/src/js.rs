@@ -90,7 +90,6 @@ fn print_binary_expression(b: Box<BinaryExpression>) -> String {
 fn print_unary_expression(u: Box<UnaryExpression>) -> String {
     let val = *u;
     let symbol = match val.operator {
-        UnaryOperator::Not => "!",
         UnaryOperator::Negate => "-",
     };
     // avoid printing `--x`, which JS reads as a decrement
@@ -196,6 +195,7 @@ fn builtin(name: &str) -> String {
         "tanya" => String::from("prompt"),
         "bilangan" => String::from("__bilangan"),
         "Galat" => String::from("Error"),
+        "Tipe" => String::from("__tipe"),
         other => safe_name(other),
     }
 }
@@ -204,6 +204,7 @@ fn builtin(name: &str) -> String {
 fn builtin_value(name: &str) -> String {
     match name {
         "Galat" => String::from("Error"),
+        "Tipe" => String::from("__tipe"),
         other => safe_name(other),
     }
 }
@@ -216,7 +217,7 @@ fn property_name(name: &str) -> &str {
         "tambah" => "push",
         "gabung" => "join",
         "balik" => "reverse",
-        "peta" => "map",
+        "ubah" => "map",
         "saring" => "filter",
         "cari" => "find",
         "urut" => "sort",
@@ -538,6 +539,15 @@ fn print_loop_statement(b: BlockStatement, depth: u8) -> String {
     res
 }
 
+/// `ulang { } sampai x` runs the body first and stops once `x` is true.
+fn print_until_statement(u: UntilStatement, depth: u8) -> String {
+    let mut res = insert_indent(depth);
+    res.push_str("do ");
+    res.push_str(&print_block_statement(u.body, depth));
+    res.push_str(&format!(" while (!({}));", expr_at(u.test, depth)));
+    res
+}
+
 fn print_while_statement(w: WhileStatement, depth: u8) -> String {
     let mut res = insert_indent(depth);
     res.push_str("while (");
@@ -548,24 +558,15 @@ fn print_while_statement(w: WhileStatement, depth: u8) -> String {
 }
 
 fn print_for_range_statement(f: ForRangeStatement, depth: u8) -> String {
-    let descending = match &f.step {
-        Some(Expression::UnaryExpression(u)) => u.operator == UnaryOperator::Negate,
-        _ => false,
-    };
     let var = safe_name(&f.var.name);
-    let update = match f.step {
-        Some(step) => format!("{} += {}", var, expr_at(step, depth)),
-        None => format!("{}++", var),
-    };
     format!(
-        "{}for (let {} = {}; {} {} {}; {}) {}",
+        "{}for (let {} = {}; {} <= {}; {}++) {}",
         insert_indent(depth),
         var,
         expr_at(f.from, depth),
         var,
-        if descending { ">=" } else { "<=" },
         expr_at(f.to, depth),
-        update,
+        var,
         print_block_statement(f.body, depth)
     )
 }
@@ -581,7 +582,7 @@ fn print_for_each_statement(f: ForEachStatement, depth: u8) -> String {
 }
 
 /// `pilih` becomes an if/else chain rather than a JS `switch`, so `berhenti;`
-/// and `lanjut;` inside a `kalau` still apply to the loop around it.
+/// and `lanjut;` inside a `saat` still apply to the loop around it.
 fn print_switch_statement(s: SwitchStatement, depth: u8) -> String {
     let (temp, subject) = match s.discriminant {
         Expression::Identifier(i) => (None, Expression::Identifier(i)),
@@ -616,7 +617,7 @@ fn print_switch_statement(s: SwitchStatement, depth: u8) -> String {
     }
     let chain = match alternate {
         Some(AlternateStatement::IfStatement(i)) => *i,
-        _ => unreachable!("the parser requires at least one kalau"),
+        _ => unreachable!("the parser requires at least one saat"),
     };
 
     match temp {
@@ -747,6 +748,7 @@ fn print_statement(s: Statement, depth: u8) -> String {
         Statement::BlockStatement(s) => insert_indent(depth) + &print_block_statement(s, depth),
         Statement::IfStatement(s) => print_if_statement(s, depth, false),
         Statement::Loop(s) => print_loop_statement(s, depth),
+        Statement::Until(s) => print_until_statement(s, depth),
         Statement::While(s) => print_while_statement(s, depth),
         Statement::ForRange(s) => print_for_range_statement(s, depth),
         Statement::ForEach(s) => print_for_each_statement(s, depth),

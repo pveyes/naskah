@@ -40,7 +40,7 @@ const NAMES = {
   push: "tambah",
   join: "gabung",
   reverse: "balik",
-  map: "peta",
+  map: "ubah",
   filter: "saring",
   find: "cari",
   sort: "urut",
@@ -201,7 +201,10 @@ const ANSWERED = 1;
 const NO_ANSWER = 2;
 
 // the program calls this as `prompt`, which is what tanya turns into
-const prompt = (question) => {
+// `Tipe.Angka` and `Tipe.Teks` tell tanya what kind of answer to hand back
+const __tipe = { Angka: "angka", Teks: "teks" };
+
+const prompt = (question, type) => {
   if (!control) {
     post("error", "tanya() belum bisa dipakai di sini dan selalu mengembalikan kosong.");
     return null;
@@ -214,7 +217,16 @@ const prompt = (question) => {
   const length = Atomics.load(control, 1);
   const text = String.fromCharCode(...letters.subarray(0, length));
   Atomics.store(control, 0, WAITING);
-  return state === ANSWERED ? text : null;
+  if (state !== ANSWERED) return null;
+  if (type === __tipe.Angka) {
+    const number = __bilangan(text);
+    if (Number.isNaN(number)) {
+      post("error", "Jawabanmu bukan angka, jadi tanya() memberi kosong.");
+      return null;
+    }
+    return number;
+  }
+  return text;
 };
 
 // an answer is text; this makes it a number the way it is written in Indonesia: 1,5 and 1.000
@@ -240,8 +252,8 @@ self.onmessage = async (event) => {
 
   const started = performance.now();
   try {
-    const program = new AsyncFunction("console", "prompt", "__log", "__pesan", "__teks", "__tambah", "__bilangan", '"use strict";\n' + event.data.code);
-    await program(sandbox, prompt, __log, __pesan, __teks, __tambah, __bilangan);
+    const program = new AsyncFunction("console", "prompt", "__log", "__pesan", "__teks", "__tambah", "__bilangan", "__tipe", '"use strict";\n' + event.data.code);
+    await program(sandbox, prompt, __log, __pesan, __teks, __tambah, __bilangan, __tipe);
   } catch (e) {
     report(e);
   }

@@ -26,8 +26,7 @@ Dari yang paling lemah ke paling kuat:
 | `=` | isi ulang variabel |
 | `atau` | atau |
 | `dan` | dan |
-| `bukan` | bukan |
-| `==` `!=` | sama / tidak sama |
+| `adalah` `bukan` | sama / tidak sama |
 | `>` `<` `>=` `<=` | perbandingan |
 | `+` `-` | tambah, kurang |
 | `*` `/` `%` | kali, bagi, sisa bagi |
@@ -35,6 +34,8 @@ Dari yang paling lemah ke paling kuat:
 | `^` | pangkat |
 | `a.b` `a[0]` `f(x)` | properti, elemen, panggil fungsi |
 | `tunggu x` | tunggu hasil (setingkat dengan `-x`) |
+
+`adalah` dan `bukan` menggantikan `==` dan `!=`, dan `=` hanya untuk mengisi variabel. `bukan` tidak dipakai di depan sebuah nilai; untuk memeriksa salah, tulis `x adalah salah`.
 
 Gunakan tanda kurung `( )` untuk mengubah urutan. Komentar diawali `//`.
 
@@ -47,51 +48,62 @@ Karena baris baru mengakhiri pernyataan, tanda yang membuka baris (`.`, `(`, `[`
 ### Variabel
 
 ```
-misal x = 4;
-konstan pi = 3,14;
-x = x + 1;
+misal x = 4
+konstan pi = 3,14
+x = x + 1
 ```
 
 ### Percabangan
 
 ```
-jika x == 2 {
-  tulis("dua");
-} lain jika x > 2 dan bukan x == 10 {
-  tulis("lebih dari dua");
+jika x adalah 2 {
+  tulis("dua")
+} lain jika x > 2 dan x bukan 10 {
+  tulis("lebih dari dua")
 } lain {
-  tulis("kurang dari dua");
+  tulis("kurang dari dua")
 }
 ```
 
-Untuk mengecek `kosong`, `benar` dan `salah` ada singkatan: `jika x kosong {` sama dengan `jika x == kosong {`.
+Untuk mengecek `kosong`, `benar` dan `salah` ada singkatan: `jika x kosong {` sama dengan `jika x adalah kosong {`.
 
 ### Perulangan
 
 ```
 selama x < 10 {
-  x = x + 1;
+  x = x + 1
 }
 
-// tanpa kondisi, berhenti dengan `berhenti;`
+// tanpa kondisi, berhenti dengan `berhenti`
 ulang {
   jika x > 20 {
-    berhenti;
+    berhenti
   }
-  x = x + 1;
-  lanjut;
+  x = x + 1
+  lanjut
 }
 ```
 
-Perulangan dengan hitungan. Batas `sampai` ikut dihitung. Beri `langkah` negatif untuk menghitung mundur.
+Perulangan yang mengerjakan isinya dulu, lalu berhenti kalau syaratnya sudah benar. `sampai` harus satu baris dengan `}`.
+
+```
+misal x = 0
+ulang {
+  x = x + 1
+} sampai x >= 5
+```
+
+Perulangan dengan hitungan. Batas `sampai` ikut dihitung, dan hitungannya selalu naik satu per satu. Untuk hitungan lain (mundur, loncat dua-dua), pakai `selama`.
 
 ```
 untuk i dari 1 sampai 10 {
-  tulis(i);
+  tulis(i)
 }
 
-untuk i dari 10 sampai 0 langkah -2 {
-  tulis(i);
+misal j = 10
+selama j >= 0 {
+  tulis(j)
+  j = j - 2
 }
 ```
 
@@ -99,7 +111,7 @@ Perulangan untuk setiap isi daftar:
 
 ```
 untuk setiap barang dalam belanja {
-  tulis(barang);
+  tulis(barang)
 }
 ```
 
@@ -107,30 +119,42 @@ untuk setiap barang dalam belanja {
 
 ```
 pilih x {
-  kalau 1, 2 {
-    tulis("satu atau dua");
+  saat 1 / 2 {
+    tulis("satu atau dua")
   }
-  kalau 3 {
-    tulis("tiga");
+  saat 3 {
+    tulis("tiga")
   }
   lain {
-    tulis("lainnya");
+    tulis("lainnya")
   }
 }
 ```
 
-Setiap `kalau` berdiri sendiri, tidak lanjut ke `kalau` di bawahnya. `berhenti;` dan `lanjut;` di dalam `kalau` berlaku untuk perulangan di sekitarnya.
+Beberapa nilai dalam satu `saat` dipisah dengan `/`, dibaca "atau". Untuk pembagian di sana, pakai kurung: `saat (a / 2) {`.
+
+Kalau isi sebuah `saat` (atau `lain`) hanya satu pernyataan, kurung kurawal boleh dilewatkan, asal pernyataan itu ditulis di baris yang sama:
+
+```
+pilih nilai {
+  saat 100 tulis("Sempurna!")
+  saat 80 / 90 tulis("Bagus sekali.")
+  lain tulis("Terus berlatih.")
+}
+```
+
+Setiap `saat` berdiri sendiri, tidak lanjut ke `saat` di bawahnya. `berhenti` dan `lanjut` di dalam `saat` berlaku untuk perulangan di sekitarnya.
 
 ### Daftar dan objek
 
 ```
-misal belanja = ["beras", "telur"];
-belanja.tambah("gula");
-belanja[0] = "ketan";
-tulis(belanja.panjang);
+misal belanja = ["beras", "telur"]
+belanja.tambah("gula")
+belanja[0] = "ketan"
+tulis(belanja.panjang)
 
-misal orang = { nama: "Budi", umur: 3 };
-orang.umur = orang.umur + 1;
+misal orang = { nama: "Budi", umur: 3 }
+orang.umur = orang.umur + 1
 ```
 
 Nama khusus untuk daftar: `panjang` (`length`), `tambah` (`push`), `gabung` (`join`), `balik` (`reverse`). Nama ini diterjemahkan di mana pun dipakai, termasuk sebagai nama properti objek.
@@ -139,10 +163,10 @@ Nama khusus untuk daftar: `panjang` (`length`), `tambah` (`push`), `gabung` (`jo
 
 ```
 fungsi jumlah(a, b) {
-  hasilkan a + b;
+  hasilkan a + b
 }
 
-tulis(jumlah(1, 2));
+tulis(jumlah(1, 2))
 ```
 
 `tulis` menjadi `console.log` dan `tanya` menjadi `prompt`.
@@ -152,8 +176,8 @@ tulis(jumlah(1, 2));
 Apa pun di dalam `{ }` pada sebuah teks dihitung sebagai ekspresi.
 
 ```
-misal nama = "Budi";
-tulis("Halo, {nama}! Kamu punya {belanja.panjang + 1} barang.");
+misal nama = "Budi"
+tulis("Halo, {nama}! Kamu punya {belanja.panjang + 1} barang.")
 ```
 
 Tulis `\{` untuk kurung kurawal biasa: `"\{bukan sisipan}"`.
@@ -163,12 +187,12 @@ Tulis `\{` untuk kurung kurawal biasa: `"\{bukan sisipan}"`.
 `fungsi` tanpa nama bisa dikirim sebagai argumen.
 
 ```
-misal ganda = angka.peta(fungsi (x) {
-  hasilkan x * 2;
-});
+misal ganda = angka.ubah(fungsi (x) {
+  hasilkan x * 2
+})
 ```
 
-Nama bawaan untuk daftar: `panjang` (`length`), `tambah` (`push`), `gabung` (`join`), `balik` (`reverse`), `peta` (`map`), `saring` (`filter`), `cari` (`find`), `urut` (`sort`).
+Nama bawaan untuk daftar: `panjang` (`length`), `tambah` (`push`), `gabung` (`join`), `balik` (`reverse`), `ubah` (`map`), `saring` (`filter`), `cari` (`find`), `urut` (`sort`).
 
 ### Tunggu
 
@@ -176,22 +200,22 @@ Nama bawaan untuk daftar: `panjang` (`length`), `tambah` (`push`), `gabung` (`jo
 
 ```
 fungsi ambil() {
-  tunggu tunda(300);   // tunda(ms) menunggu sekian milidetik
-  hasilkan "data";
+  tunggu tunda(300)   // tunda(ms) menunggu sekian milidetik
+  hasilkan "data"
 }
 
-misal hasil = tunggu ambil();
+misal hasil = tunggu ambil()
 ```
 
 ### Menangani galat
 
 ```
 coba {
-  lempar Galat("jaringan putus");
+  lempar Galat("jaringan putus")
 } tangkap galat {
-  tulis("Gagal: {galat.pesan}");
+  tulis("Gagal: {galat.pesan}")
 } akhirnya {
-  tulis("selesai");
+  tulis("selesai")
 }
 ```
 
@@ -255,10 +279,10 @@ misal nama = tanya("Siapa namamu?")
 tulis("Halo, {nama}!")
 ```
 
-Jawaban selalu berupa tulisan. Pakai `bilangan` untuk mengubahnya menjadi angka. `bilangan` mengerti angka dalam format Indonesia (`12`, `1,5`, `1.000`), dan hasilnya `bukan angka` kalau jawabannya bukan angka.
+Jawaban berupa tulisan, kecuali kamu menyebut jenisnya di nilai kedua: `Tipe.Teks` (bawaan) atau `Tipe.Angka`. Dengan `Tipe.Angka`, jawaban diubah menjadi angka. Angka dalam format Indonesia dimengerti (`12`, `1,5`, `1.000`), dan kalau jawabannya bukan angka, `tanya` memberi `kosong` dan menampilkan pesan. `bilangan` masih bisa dipakai untuk mengubah tulisan yang sudah ada menjadi angka.
 
 ```
-misal umur = bilangan(tanya("Umurmu berapa?"))
+misal umur = tanya("Umurmu berapa?", Tipe.Angka)
 tulis("Tahun depan kamu {umur + 1} tahun.")
 ```
 

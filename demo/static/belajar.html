@@ -119,10 +119,10 @@ jika nilai &gt;= 75 {
 } lain {
   tulis("Belajar lagi, ya.")
 }</pre>
-          <p>Ini tanda-tanda untuk membandingkan: <code>==</code> sama dengan, <code>!=</code> tidak sama dengan, <code>&lt;</code> kurang dari, <code>&gt;</code> lebih dari, <code>&lt;=</code> kurang dari atau sama dengan, dan <code>&gt;=</code> lebih dari atau sama dengan. Hati-hati: sama dengan memakai dua tanda sama dengan.</p>
-          <p>Syarat bisa digabung dengan <code>dan</code>, <code>atau</code>, dan <code>bukan</code>.</p>
+          <p>Ini tanda-tanda untuk membandingkan: <code>adalah</code> sama dengan, <code>bukan</code> tidak sama dengan, <code>&lt;</code> kurang dari, <code>&gt;</code> lebih dari, <code>&lt;=</code> kurang dari atau sama dengan, dan <code>&gt;=</code> lebih dari atau sama dengan.</p>
+          <p>Syarat bisa digabung dengan <code>dan</code> dan <code>atau</code>.</p>
           <pre class="naskah">misal hari = "Sabtu"
-jika hari == "Sabtu" atau hari == "Minggu" {
+jika hari adalah "Sabtu" atau hari adalah "Minggu" {
   tulis("Hore, libur!")
 } lain {
   tulis("Ayo sekolah.")
@@ -140,6 +140,26 @@ jika nilai &gt;= 90 {
 } lain {
   tulis("Ayo belajar lagi.")
 }</pre>
+          <p>Kalau banyak pilihan untuk satu nilai yang sama, <code>pilih</code> lebih rapi. Tiap <code>saat</code> berdiri sendiri, dan <code>lain</code> dipakai kalau tidak ada yang cocok.</p>
+          <pre class="naskah">misal hari = "Jumat"
+pilih hari {
+  saat "Sabtu" / "Minggu" {
+    tulis("Libur!")
+  }
+  saat "Jumat" {
+    tulis("Besok libur.")
+  }
+  lain {
+    tulis("Hari sekolah.")
+  }
+}</pre>
+          <p>Kalau isinya hanya satu perintah, kurung kurawalnya boleh dilewatkan. Tulis perintahnya di baris yang sama.</p>
+          <pre class="naskah">misal nilai = 90
+pilih nilai {
+  saat 100 tulis("Sempurna!")
+  saat 80 / 90 tulis("Bagus sekali.")
+  lain tulis("Terus berlatih.")
+}</pre>
           <div class="coba"><h3>Coba sendiri</h3><ul><li>Ubah <code>nilai</code> menjadi 95, lalu 60, dan lihat jawabannya.</li><li>Ganti <code>hari</code> dengan hari ini.</li></ul></div>
         </section>
 
@@ -149,11 +169,11 @@ jika nilai &gt;= 90 {
           <pre class="naskah">misal nama = tanya("Siapa namamu?")
 tulis("Halo, {nama}!")</pre>
           <p>Ketik jawabanmu di kotak yang muncul di Keluaran, lalu tekan Enter atau tombol <strong>Kirim</strong>. Jawabanmu disimpan di dalam kotak <code>nama</code>.</p>
-          <p>Jawaban selalu berupa tulisan. Kalau jawabanmu angka dan mau dihitung, ubah dulu dengan <code>bilangan</code>. Ia mengerti angka seperti 12, 1,5, dan 1.000.</p>
-          <pre class="naskah">misal umur = bilangan(tanya("Umurmu berapa?"))
+          <p>Jawaban biasanya berupa tulisan. Kalau jawabanmu angka dan mau dihitung, tambahkan <code>Tipe.Angka</code> sesudah pertanyaannya. Angka seperti 12, 1,5, dan 1.000 dimengerti.</p>
+          <pre class="naskah">misal umur = tanya("Umurmu berapa?", Tipe.Angka)
 tulis("Tahun depan kamu {umur + 1} tahun.")</pre>
           <p>Jawabanmu juga bisa dipakai untuk mengambil keputusan.</p>
-          <pre class="naskah">misal umur = bilangan(tanya("Umurmu berapa?"))
+          <pre class="naskah">misal umur = tanya("Umurmu berapa?", Tipe.Angka)
 jika umur &gt;= 7 {
   tulis("Kamu sudah bisa masuk SD.")
 } lain {
@@ -177,18 +197,19 @@ tulis("{a} x {b} = {a * b}")</pre>
           <pre class="naskah">untuk i dari 1 sampai 10 {
   tulis("7 x {i} = {7 * i}")
 }</pre>
-          <p>Untuk menghitung mundur, tambahkan <code>langkah</code> dengan angka negatif.</p>
-          <pre class="naskah">untuk i dari 5 sampai 1 langkah -1 {
-  tulis(i)
-}
-tulis("Selesai!")</pre>
-          <p>Cara kedua adalah <code>selama</code>: mengulang selama syaratnya masih benar.</p>
+          <p>Cara kedua adalah <code>selama</code>: mengulang selama syaratnya masih benar. Dengan cara ini kamu bisa membuat hitungan sendiri, misalnya menghitung mundur.</p>
           <pre class="naskah">misal angka = 1
 selama angka &lt;= 5 {
   tulis(angka)
   angka = angka + 1
 }</pre>
           <p>Hati-hati! Kalau lupa mengubah <code>angka</code>, syaratnya tidak pernah menjadi salah dan ulangannya tidak pernah selesai. Di sini, program yang berjalan lebih dari 2 detik akan dihentikan.</p>
+          <p>Cara ketiga adalah <code>ulang</code> dengan <code>sampai</code>: isinya dikerjakan dulu, lalu berhenti kalau syaratnya sudah benar.</p>
+          <pre class="naskah">misal angka = 1
+ulang {
+  tulis(angka)
+  angka = angka + 1
+} sampai angka &gt; 5</pre>
           <div class="coba"><h3>Coba sendiri</h3><ul><li>Buat tabel perkalian 5.</li><li>Hitung mundur dari 10.</li></ul></div>
         </section>
 
@@ -236,7 +257,7 @@ misal hasil = luas(3, 6)
 tulis("Luasnya {hasil}")</pre>
           <p>Fungsi boleh dipakai di dalam syarat.</p>
           <pre class="naskah">fungsi genap(n) {
-  hasilkan n % 2 == 0
+  hasilkan n % 2 adalah 0
 }
 
 untuk i dari 1 sampai 6 {
@@ -361,9 +382,11 @@ kartu("Budi", 10, "bermain bola")</pre>
           <h2>12. Lanjutan: menunggu</h2>
           <p>Komputer bisa disuruh menunggu. <code>tunda</code> menunggu sekian milidetik (1000 milidetik sama dengan 1 detik), dan <code>tunggu</code> menunggu sampai sebuah pekerjaan selesai.</p>
           <pre class="naskah">fungsi hitungMundur() {
-  untuk i dari 3 sampai 1 langkah -1 {
+  misal i = 3
+  selama i >= 1 {
     tulis(i)
     tunggu tunda(400)
+    i = i - 1
   }
   tulis("Selesai!")
 }
