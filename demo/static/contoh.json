@@ -1,0 +1,22 @@
+[
+  {
+    "file": "halo.nsk",
+    "kode": "misal nama = \"Dunia\"\ntulis(\"Halo, {nama}!\")"
+  },
+  {
+    "file": "jika.nsk",
+    "kode": "misal nilai = 80\njika nilai >= 75 {\n  tulis(\"Lulus!\")\n} lain {\n  tulis(\"Belajar lagi, ya.\")\n}"
+  },
+  {
+    "file": "ulang.nsk",
+    "kode": "misal buah = [\"apel\", \"jeruk\", \"mangga\"]\nuntuk setiap b dalam buah {\n  tulis(\"Aku suka {b}\")\n}"
+  },
+  {
+    "file": "tanya.nsk",
+    "kode": "misal nama = tanya(\"Siapa namamu?\")\nmisal umur = bilangan(tanya(\"Umurmu berapa?\"))\n\njika umur >= 7 {\n  tulis(\"Halo, {nama}! Kamu sudah SD.\")\n} lain {\n  tulis(\"Halo, {nama}! Sebentar lagi SD.\")\n}"
+  },
+  {
+    "file": "kelas.nsk",
+    "kode": "Hewan(nama) {\n  .nama = nama\n\n  suara() {\n    hasilkan \"...\"\n  }\n}\n\nKucing(nama) turunan Hewan(nama) {\n  suara() {\n    hasilkan \"meong\"\n  }\n}\n\nmisal tom = Kucing(\"Tom\")\ntulis(\"{tom.nama} bilang {tom.suara()}\")"
+  }
+]

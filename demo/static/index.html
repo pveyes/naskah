@@ -39,10 +39,10 @@
           </p>
         </section>
 
-        <div class="playground-tools">
-          <button type="button" class="js-toggle" id="js-toggle" aria-pressed="false">Lihat JavaScript</button>
-        </div>
         <div class="playground-wrap">
+          <div class="playground-tools">
+            <div class="tabs" id="examples" role="tablist" aria-label="Contoh program"></div>
+          </div>
           <section class="playground" id="playground" data-js="hidden" aria-label="Tempat Coba"></section>
           <div class="line-bands" id="line-bands" aria-hidden="true"></div>
         </div>
@@ -50,7 +50,10 @@
         <section class="console" aria-label="Keluaran">
           <div class="console-bar">
             <span class="pane-title">Keluaran</span>
-            <span class="console-status" id="console-status">Menunggu</span>
+            <span class="console-actions">
+              <span class="console-status" id="console-status">Menunggu</span>
+              <button type="button" class="console-run" id="console-run">Jalankan</button>
+            </span>
           </div>
           <div class="console-output" id="console-output" role="log" aria-live="polite"></div>
         </section>
@@ -70,7 +73,8 @@
               <tr><td><code class="snippet"><span class="tok-literal">benar</span>  <span class="tok-literal">salah</span>  <span class="tok-literal">kosong</span></code></td><td>Ya, tidak, dan tidak ada nilai.</td></tr>
               <tr><td><code class="snippet"><span class="tok-keyword">dan</span>  <span class="tok-keyword">atau</span>  <span class="tok-keyword">bukan</span></code></td><td>Menggabungkan atau membalik syarat.</td></tr>
               <tr><td><code class="snippet"><span class="tok-function">tulis</span>(x)</code></td><td>Menampilkan x di Keluaran.</td></tr>
-              <tr><td><code class="snippet"><span class="tok-function">tanya</span>(x)</code></td><td>Bertanya kepada pengguna. Belum bisa dipakai di sini.</td></tr>
+              <tr><td><code class="snippet"><span class="tok-function">tanya</span>("Siapa namamu?")</code></td><td>Bertanya kepada pengguna dan menunggu jawabannya, yang berupa tulisan.</td></tr>
+              <tr><td><code class="snippet"><span class="tok-function">bilangan</span>(jawaban)</code></td><td>Mengubah tulisan menjadi angka, misalnya "1,5" menjadi 1,5.</td></tr>
               <tr><td><code class="snippet"><span class="tok-string">"Halo, {nama}"</span></code></td><td>Teks yang menyisipkan isi nama.</td></tr>
             </tbody>
           </table>

@@ -4,7 +4,7 @@
 
 Naskah ditulis dalam Bahasa Indonesia dan diterjemahkan ke JavaScript. Coba langsung di browser: **https://naskah.dev**
 
-Belum pernah membuat program? Mulai dari **[Belajar Naskah](https://naskah.dev/belajar)**: sebelas pelajaran pendek dalam Bahasa Indonesia, dengan contoh yang bisa langsung dijalankan.
+Belum pernah membuat program? Mulai dari **[Belajar Naskah](https://naskah.dev/belajar)**: dua belas pelajaran pendek dalam Bahasa Indonesia, dengan contoh yang bisa langsung dijalankan.
 
 ## Sekilas
 

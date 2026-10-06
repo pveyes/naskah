@@ -25,37 +25,9 @@ enum Msg {
     ChangeCode(String),
 }
 
-const EXAMPLE_CODE: &str = r#"// Hewan peliharaan
-Hewan(nama) {
-  .nama = nama
-
-  suara() {
-    hasilkan "..."
-  }
-}
-
-Kucing(nama) turunan Hewan(nama) {
-  suara() {
-    hasilkan "meong, bukan {..suara()}"
-  }
-}
-
-misal daftar = [Hewan("Burung"), Kucing("Tom")]
-untuk setiap h dalam daftar {
-  tulis("{h.nama} bilang {h.suara()}")
-}
-
-fungsi ambil() {
-  tunggu tunda(300)
-  lempar Galat("jaringan putus")
-}
-
-coba {
-  tunggu ambil()
-} tangkap galat {
-  tulis("Gagal: {galat.pesan}")
-}
-"#;
+/// What the editor starts with: the first of the examples in static/contoh.json.
+const EXAMPLE_CODE: &str = r#"misal nama = "Dunia"
+tulis("Halo, {nama}!")"#;
 
 /// The JavaScript, plus `sites|lines` for console.js: "js:naskah" pairs for every
 /// `tulis` call and for the first line of every statement.
@@ -224,6 +196,43 @@ mod test {
                 assert!(!failed, "{}\n--- in:\n{}", answer.replace('\u{1}', " | "), code);
             }
         }
+    }
+
+    /// The tabs above the editor, as (file name, program).
+    fn tab_examples() -> Vec<(String, String)> {
+        const TABS: &str = include_str!("../static/contoh.json");
+        let list: serde_json::Value = serde_json::from_str(TABS).expect("contoh.json is JSON");
+        list.as_array()
+            .expect("a list of examples")
+            .iter()
+            .map(|e| (e["file"].as_str().unwrap().to_string(), e["kode"].as_str().unwrap().to_string()))
+            .collect()
+    }
+
+    #[test]
+    fn every_example_tab_compiles() {
+        let examples = tab_examples();
+        // a few, easy ones first, so the page stays short and a child can follow the climb
+        assert!((3..=5).contains(&examples.len()), "{} examples", examples.len());
+        for (file, code) in &examples {
+            let answer = compile_program(code);
+            assert!(!answer.starts_with("error"), "{}: {}", file, answer.replace('\u{1}', " | "));
+        }
+    }
+
+    #[test]
+    fn the_tabs_are_files_with_their_own_names() {
+        let examples = tab_examples();
+        let mut names: Vec<_> = examples.iter().map(|(file, _)| file.clone()).collect();
+        assert!(names.iter().all(|n| n.ends_with(".nsk")), "{:?}", names);
+        names.sort();
+        names.dedup();
+        assert_eq!(names.len(), examples.len(), "two tabs share a name");
+    }
+
+    #[test]
+    fn the_editor_starts_with_the_first_tab() {
+        assert_eq!(EXAMPLE_CODE, tab_examples()[0].1);
     }
 
     #[test]

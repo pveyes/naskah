@@ -3,11 +3,14 @@
 // `ulang { }` never freezes the page.
 
 import { parseMap, runProgram, TIME_LIMIT_MS } from "./runner.js";
+import { addLine as addTerminalLine, ask } from "./terminal.js";
+import { setupExamples } from "./contoh.js";
 
 const DEBOUNCE_MS = 300;
 
 const output = document.getElementById("console-output");
 const status = document.getElementById("console-status");
+const runButton = document.getElementById("console-run");
 
 let stopProgram = null;
 let runId = 0;
@@ -17,26 +20,16 @@ function clear() {
   hideBand();
 }
 
+// the program is a file, and its name is on every line it prints
+let currentFile = "naskah.nsk";
+
 function addLine(level, text, sourceLine, column) {
-  const line = document.createElement("div");
-  line.className = "console-line console-" + level;
-
-  const message = document.createElement("span");
-  message.className = "console-text";
-  message.textContent = text;
-  line.appendChild(message);
-
+  const row = addTerminalLine(output, level, text, sourceLine, column, currentFile);
   if (sourceLine) {
-    line.dataset.site = sourceLine;
-    line.addEventListener("mouseenter", () => showBand(sourceLine));
-    line.addEventListener("mouseleave", hideBand);
-
-    const site = document.createElement("span");
-    site.className = "console-site";
-    site.textContent = "naskah.nsk:" + sourceLine + (column ? ":" + column : "");
-    line.appendChild(site);
+    row.addEventListener("mouseenter", () => showBand(sourceLine));
+    row.addEventListener("mouseleave", hideBand);
   }
-  output.appendChild(line);
+  return row;
 }
 
 // Highlighting the Naskah line a log line came from.
@@ -134,6 +127,14 @@ function run(js) {
         addLine(msg.level, msg.text, msg.line);
         output.scrollTop = output.scrollHeight;
       },
+      ask(question, reply) {
+        if (id !== runId) return;
+        status.textContent = "Menunggu jawabanmu";
+        return ask(output, question, (text) => {
+          status.textContent = "Menjalankan…";
+          reply(text);
+        });
+      },
       done(msg) {
         if (id !== runId) return;
         if (printed === 0) {
@@ -155,7 +156,7 @@ function run(js) {
   );
 }
 
-function update() {
+function update(manual = false) {
   const js = document.getElementById("js")?.innerText ?? "";
   const mistake = /^\/\/ Salah sintaks di baris (\d+), kolom (\d+): (.*)/.exec(js);
   if (mistake) {
@@ -174,48 +175,72 @@ function update() {
     status.textContent = "Menunggu";
     return;
   }
+  // a program that asks questions would ask them again at every change, so it waits to be started
+  if (!manual && /\bprompt\(/.test(js)) {
+    stop();
+    runId += 1;
+    placeholder("Program ini bertanya. Tekan Jalankan untuk memulai.");
+    status.textContent = "Menunggu";
+    return;
+  }
   run(js);
 }
 
 let pending = null;
 const schedule = () => {
   clearTimeout(pending);
-  pending = setTimeout(update, DEBOUNCE_MS);
+  pending = setTimeout(() => update(), DEBOUNCE_MS);
 };
 
-// A link can open the playground with a program already in the editor: /#kode=...
-// The editor is made by wasm a moment after this script runs, so wait for it.
-function loadFromLink(tries = 100) {
-  const code = new URLSearchParams(location.hash.slice(1)).get("kode");
-  if (code === null) return;
+runButton.addEventListener("click", () => {
+  clearTimeout(pending);
+  update(true);
+});
+
+// Put a program into the editor. The editor is made by wasm a moment after this script
+// runs, so wait for it.
+function setProgram(code, file, tries = 100) {
   const box = document.querySelector("#playground textarea");
   if (!box) {
-    if (tries > 0) setTimeout(() => loadFromLink(tries - 1), 50);
+    if (tries > 0) setTimeout(() => setProgram(code, file, tries - 1), 50);
     return;
   }
+  currentFile = file;
   box.value = code;
   box.dispatchEvent(new Event("input", { bubbles: true }));
+}
+
+const examples = await setupExamples(document.getElementById("examples"), (example) => {
+  setProgram(example.kode, example.file);
+});
+// the editor starts with the first example
+if (examples.first) {
+  currentFile = examples.first.file;
+  examples.markFirst();
+  // the file tabs take over the job of the "Naskah" title above the editor
+  document.getElementById("playground").dataset.tabs = "";
+}
+
+// A link can open the playground with a program already in the editor: /#kode=...
+function loadFromLink() {
+  const code = new URLSearchParams(location.hash.slice(1)).get("kode");
+  if (code === null) return;
+  examples.clear();
+  setProgram(code, "naskah.nsk");
 }
 loadFromLink();
 window.addEventListener("hashchange", () => loadFromLink());
 
-// The generated JavaScript is hidden unless asked for.
+// The generated JavaScript is hidden. A teacher can ask for it with /#javascript (the link on
+// the page for teachers), which shows it beside the code.
 const playground = document.getElementById("playground");
-const jsToggle = document.getElementById("js-toggle");
 
-function showJavaScript(visible) {
-  playground.dataset.js = visible ? "shown" : "hidden";
-  jsToggle.textContent = visible ? "Sembunyikan JavaScript" : "Lihat JavaScript";
-  jsToggle.setAttribute("aria-pressed", String(visible));
-  try {
-    localStorage.setItem("naskah-javascript", visible ? "1" : "0");
-  } catch {}
+function showJavaScript() {
+  const flags = new URLSearchParams(location.hash.slice(1));
+  playground.dataset.js = flags.has("javascript") ? "shown" : "hidden";
 }
-
-jsToggle.addEventListener("click", () => showJavaScript(playground.dataset.js === "hidden"));
-try {
-  if (localStorage.getItem("naskah-javascript") === "1") showJavaScript(true);
-} catch {}
+showJavaScript();
+window.addEventListener("hashchange", showJavaScript);
 
 // The playground is rendered by wasm, so watch its output pane for changes.
 new MutationObserver(schedule).observe(document.getElementById("playground"), {

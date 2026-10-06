@@ -42,7 +42,7 @@
 
         <nav class="toc" aria-label="Daftar pelajaran">
           <h2>Daftar pelajaran</h2>
-          <ol><li><a href="#pelajaran-1">Halo, dunia!</a></li><li><a href="#pelajaran-2">Menyimpan nilai</a></li><li><a href="#pelajaran-3">Berhitung</a></li><li><a href="#pelajaran-4">Mengambil keputusan</a></li><li><a href="#pelajaran-5">Mengulang</a></li><li><a href="#pelajaran-6">Daftar</a></li><li><a href="#pelajaran-7">Membuat perintah sendiri</a></li><li><a href="#pelajaran-8">Benda dan cetakan</a></li><li><a href="#pelajaran-9">Kalau ada yang salah</a></li><li><a href="#pelajaran-10">Proyek kecil</a></li><li><a href="#pelajaran-11">Lanjutan: menunggu</a></li></ol>
+          <ol><li><a href="#pelajaran-1">Halo, dunia!</a></li><li><a href="#pelajaran-2">Menyimpan nilai</a></li><li><a href="#pelajaran-3">Berhitung</a></li><li><a href="#pelajaran-4">Mengambil keputusan</a></li><li><a href="#pelajaran-5">Bertanya</a></li><li><a href="#pelajaran-6">Mengulang</a></li><li><a href="#pelajaran-7">Daftar</a></li><li><a href="#pelajaran-8">Membuat perintah sendiri</a></li><li><a href="#pelajaran-9">Benda dan cetakan</a></li><li><a href="#pelajaran-10">Kalau ada yang salah</a></li><li><a href="#pelajaran-11">Proyek kecil</a></li><li><a href="#pelajaran-12">Lanjutan: menunggu</a></li></ol>
         </nav>
         </div>
 
@@ -144,7 +144,31 @@ jika nilai &gt;= 90 {
         </section>
 
         <section class="lesson" id="pelajaran-5">
-          <h2>5. Mengulang</h2>
+          <h2>5. Bertanya</h2>
+          <p>Program bisa bertanya kepadamu. Perintahnya <code>tanya</code>. Program berhenti sebentar, menunggu jawabanmu, lalu melanjutkan.</p>
+          <pre class="naskah">misal nama = tanya("Siapa namamu?")
+tulis("Halo, {nama}!")</pre>
+          <p>Ketik jawabanmu di kotak yang muncul di Keluaran, lalu tekan Enter atau tombol <strong>Kirim</strong>. Jawabanmu disimpan di dalam kotak <code>nama</code>.</p>
+          <p>Jawaban selalu berupa tulisan. Kalau jawabanmu angka dan mau dihitung, ubah dulu dengan <code>bilangan</code>. Ia mengerti angka seperti 12, 1,5, dan 1.000.</p>
+          <pre class="naskah">misal umur = bilangan(tanya("Umurmu berapa?"))
+tulis("Tahun depan kamu {umur + 1} tahun.")</pre>
+          <p>Jawabanmu juga bisa dipakai untuk mengambil keputusan.</p>
+          <pre class="naskah">misal umur = bilangan(tanya("Umurmu berapa?"))
+jika umur &gt;= 7 {
+  tulis("Kamu sudah bisa masuk SD.")
+} lain {
+  tulis("Sebentar lagi masuk SD, ya.")
+}</pre>
+          <p>Dua pertanyaan, lalu dihitung.</p>
+          <pre class="naskah">misal a = bilangan(tanya("Angka pertama?"))
+misal b = bilangan(tanya("Angka kedua?"))
+tulis("{a} + {b} = {a + b}")
+tulis("{a} x {b} = {a * b}")</pre>
+          <div class="coba"><h3>Coba sendiri</h3><ul><li>Tanyakan makanan kesukaannya, lalu jawab dengan satu kalimat.</li><li>Tanyakan panjang dan lebar, lalu hitung luasnya.</li></ul></div>
+        </section>
+
+        <section class="lesson" id="pelajaran-6">
+          <h2>6. Mengulang</h2>
           <p>Komputer tidak pernah bosan. Kita bisa menyuruhnya mengulang. Cara pertama adalah mengulang dengan hitungan: <code>untuk</code>.</p>
           <pre class="naskah">untuk i dari 1 sampai 5 {
   tulis("Putaran ke-{i}")
@@ -168,8 +192,8 @@ selama angka &lt;= 5 {
           <div class="coba"><h3>Coba sendiri</h3><ul><li>Buat tabel perkalian 5.</li><li>Hitung mundur dari 10.</li></ul></div>
         </section>
 
-        <section class="lesson" id="pelajaran-6">
-          <h2>6. Daftar</h2>
+        <section class="lesson" id="pelajaran-7">
+          <h2>7. Daftar</h2>
           <p>Daftar menyimpan banyak nilai sekaligus. Ia ditulis dengan kurung siku, nilainya dipisah koma dan spasi.</p>
           <pre class="naskah">misal buah = ["apel", "jeruk", "mangga"]
 tulis(buah)
@@ -193,8 +217,8 @@ tulis("Rata-rata: {jumlah / nilai.panjang}")</pre>
           <div class="coba"><h3>Coba sendiri</h3><ul><li>Buat daftar nama teman-temanmu, lalu sapa mereka satu per satu.</li><li>Tambahkan satu nilai lagi ke daftar <code>nilai</code>.</li></ul></div>
         </section>
 
-        <section class="lesson" id="pelajaran-7">
-          <h2>7. Membuat perintah sendiri</h2>
+        <section class="lesson" id="pelajaran-8">
+          <h2>8. Membuat perintah sendiri</h2>
           <p>Kita bisa membuat perintah sendiri dengan <code>fungsi</code>. Perintah itu dibuat sekali, lalu dipakai sebanyak yang kita mau.</p>
           <pre class="naskah">fungsi sapa(nama) {
   tulis("Halo, {nama}!")
@@ -225,8 +249,8 @@ untuk i dari 1 sampai 6 {
           <div class="coba"><h3>Coba sendiri</h3><ul><li>Buat fungsi <code>segitiga</code> yang menghitung luas segitiga dari alas dan tinggi.</li><li>Buat fungsi yang memberi tahu apakah sebuah nilai lulus.</li></ul></div>
         </section>
 
-        <section class="lesson" id="pelajaran-8">
-          <h2>8. Benda dan cetakan</h2>
+        <section class="lesson" id="pelajaran-9">
+          <h2>9. Benda dan cetakan</h2>
           <p>Hewan punya nama dan suara. Kita bisa membuat <strong>cetakan</strong> untuk hewan, lalu mencetak banyak hewan dari cetakan itu. Nama cetakan selalu diawali <strong>huruf kapital</strong>.</p>
           <pre class="naskah">Hewan(nama) {
   .nama = nama
@@ -274,8 +298,8 @@ tulis(Kucing("Tom").suara())</pre>
           <div class="coba"><h3>Coba sendiri</h3><ul><li>Buat cetakan <code>Anjing</code> yang turunan dari <code>Hewan</code>, dengan suara <code>"guk"</code>.</li><li>Buat tiga hewan dan masukkan ke dalam daftar, lalu sapa semuanya.</li></ul></div>
         </section>
 
-        <section class="lesson" id="pelajaran-9">
-          <h2>9. Kalau ada yang salah</h2>
+        <section class="lesson" id="pelajaran-10">
+          <h2>10. Kalau ada yang salah</h2>
           <p>Semua orang pernah salah menulis, termasuk pembuat program yang hebat. Komputer akan memberi tahu apa yang salah dan di baris berapa. Bacalah pelan-pelan, petunjuknya membantu.</p>
           <p>Di sini ada huruf yang tertukar. Komputer menebak maksudmu.</p>
           <pre class="naskah" data-salah>misal nama = "Budi"
@@ -298,8 +322,8 @@ tulis("Programnya tetap jalan.")</pre>
           <div class="coba"><h3>Coba sendiri</h3><ul><li>Hapus satu huruf dari <code>tulis</code>, lalu lihat apa kata komputer.</li><li>Lupa menutup tanda kutip atau kurung, dan lihat petunjuknya.</li></ul></div>
         </section>
 
-        <section class="lesson" id="pelajaran-10">
-          <h2>10. Proyek kecil</h2>
+        <section class="lesson" id="pelajaran-11">
+          <h2>11. Proyek kecil</h2>
           <p>Sekarang kamu bisa membuat program sendiri. Ini beberapa ide untuk dicoba dan diubah.</p>
           <p><strong>Daftar belanja</strong> dengan jumlah harganya.</p>
           <pre class="naskah">misal barang = ["beras", "telur", "gula"]
@@ -333,8 +357,8 @@ kartu("Ani", 9, "menggambar")
 kartu("Budi", 10, "bermain bola")</pre>
         </section>
 
-        <section class="lesson" id="pelajaran-11">
-          <h2>11. Lanjutan: menunggu</h2>
+        <section class="lesson" id="pelajaran-12">
+          <h2>12. Lanjutan: menunggu</h2>
           <p>Komputer bisa disuruh menunggu. <code>tunda</code> menunggu sekian milidetik (1000 milidetik sama dengan 1 detik), dan <code>tunggu</code> menunggu sampai sebuah pekerjaan selesai.</p>
           <pre class="naskah">fungsi hitungMundur() {
   untuk i dari 3 sampai 1 langkah -1 {

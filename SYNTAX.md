@@ -246,6 +246,24 @@ Memanggil nama berhuruf kapital selalu membuat objek baru, tanpa kata `baru`: `K
 
 Nama kelas ditulis seperti memanggil fungsi, jadi `hewan(nama) {` dengan huruf kecil dianggap salah tulis dan dilaporkan sebagai galat.
 
+### Bertanya kepada pengguna
+
+`tanya` menampilkan sebuah pertanyaan, menunggu pengguna mengetik jawaban, lalu memberikannya sebagai tulisan.
+
+```
+misal nama = tanya("Siapa namamu?")
+tulis("Halo, {nama}!")
+```
+
+Jawaban selalu berupa tulisan. Pakai `bilangan` untuk mengubahnya menjadi angka. `bilangan` mengerti angka dalam format Indonesia (`12`, `1,5`, `1.000`), dan hasilnya `bukan angka` kalau jawabannya bukan angka.
+
+```
+misal umur = bilangan(tanya("Umurmu berapa?"))
+tulis("Tahun depan kamu {umur + 1} tahun.")
+```
+
+Menunggu jawaban tidak dihitung dalam batas waktu program. Kalau pengguna menghentikan program saat ia bertanya, `tanya` memberi `kosong`. `tanya` hanya bekerja di halaman yang memenuhi syarat keamanan peramban (lihat `public/_headers`); di tempat lain ia memberi `kosong` dan menampilkan pesan.
+
 ### Kesalahan sintaks
 
 Kesalahan dilaporkan satu per satu dengan posisinya, misalnya `baris 1, kolom 11: ekspresi tidak lengkap, ditemukan `;``.
