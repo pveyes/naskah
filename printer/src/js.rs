@@ -157,8 +157,16 @@ fn property_name(name: &str) -> &str {
     }
 }
 
+/// Brackets a Naskah line number in front of a printed `tulis` call. `print`
+/// leaves them in; `extract_call_sites` turns them into a source map.
+pub const SITE_START: char = '\u{E000}';
+pub const SITE_END: char = '\u{E001}';
+
 fn print_call_expression(c: CallExpression) -> String {
     let callee = match *c.callee {
+        Expression::Identifier(i) if i.name == "tulis" => {
+            format!("{}{}{}{}", SITE_START, c.line, SITE_END, builtin(&i.name))
+        }
         Expression::Identifier(i) => builtin(&i.name).to_string(),
         other => {
             let parens = precedence(&other) < PREC_ATOM;

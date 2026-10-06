@@ -442,9 +442,14 @@ impl Parser {
                     | Expression::CallExpression(_) => {}
                     _ => return self.error(String::from("ini bukan fungsi dan tidak bisa dipanggil")),
                 }
+                let line = self.tokens[self.pos].line;
                 self.advance();
                 let arguments = self.comma_separated(")", Parser::expression)?;
-                e = Expression::CallExpression(CallExpression { callee: Box::new(e), arguments });
+                e = Expression::CallExpression(CallExpression {
+                    callee: Box::new(e),
+                    arguments,
+                    line,
+                });
             } else {
                 return Ok(e);
             }
@@ -569,7 +574,11 @@ mod test {
     }
 
     fn call(name: &str, arguments: Vec<Expression>) -> Expression {
-        Expression::CallExpression(CallExpression { callee: Box::new(ident(name)), arguments })
+        Expression::CallExpression(CallExpression {
+            callee: Box::new(ident(name)),
+            arguments,
+            line: 1,
+        })
     }
 
     fn assign(target: Expression, value: Expression) -> Expression {
@@ -702,6 +711,22 @@ mod test {
         );
         // == is a comparison, not an assignment
         assert_eq!(expr("x == 1"), bin(ident("x"), Operator::Equal, num(1.0)));
+    }
+
+    #[test]
+    fn calls_remember_their_line() {
+        let body = ok("\n\ntulis(1);\nmisal x = f(\n  2\n);");
+        match &body[0] {
+            Statement::Expression(Expression::CallExpression(c)) => assert_eq!(c.line, 3),
+            other => panic!("{:?}", other),
+        }
+        match &body[1] {
+            Statement::VariableDeclaration(v) => match &v.value {
+                Expression::CallExpression(c) => assert_eq!(c.line, 4),
+                other => panic!("{:?}", other),
+            },
+            other => panic!("{:?}", other),
+        }
     }
 
     #[test]
@@ -840,6 +865,7 @@ mod test {
             Expression::CallExpression(CallExpression {
                 callee: Box::new(member(ident("daftar"), "tambah")),
                 arguments: vec![num(4.0)],
+                line: 1,
             })
         );
         // calling the result of a call
@@ -848,6 +874,7 @@ mod test {
             Expression::CallExpression(CallExpression {
                 callee: Box::new(call("f", vec![num(1.0)])),
                 arguments: vec![num(2.0)],
+                line: 1,
             })
         );
         // postfix binds tighter than unary minus and ^

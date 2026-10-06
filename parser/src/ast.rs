@@ -15,6 +15,8 @@ pub struct Identifier {
 pub struct CallExpression {
     pub callee: Box<Expression>,
     pub arguments: Vec<Expression>,
+    /// Source line (1-based) of the opening parenthesis.
+    pub line: usize,
 }
 
 #[derive(PartialEq, Debug, Clone)]

@@ -4,12 +4,53 @@ mod js;
 
 use parser::parse;
 
-pub fn to_js(s: String) -> String {
-    let naskah_ast = parse(&s);
-    match naskah_ast {
-        Ok(ast) => js::print(ast),
-        Err(e) => format!("// Salah sintaks di {}", e),
+/// JavaScript plus, for every `tulis(...)`, the line it was written on.
+pub struct Transpiled {
+    pub js: String,
+    /// `(js_line, naskah_line)`, both 1-based. If a JS line holds several
+    /// `tulis` calls, the first one is recorded.
+    pub call_sites: Vec<(usize, usize)>,
+}
+
+pub fn transpile(s: &str) -> Transpiled {
+    match parse(s) {
+        Ok(ast) => extract_call_sites(&js::print(ast)),
+        Err(e) => Transpiled {
+            js: format!("// Salah sintaks di {}", e),
+            call_sites: vec![],
+        },
     }
+}
+
+pub fn to_js(s: String) -> String {
+    transpile(&s).js
+}
+
+/// Strip the line markers the printer left behind and collect them per JS line.
+fn extract_call_sites(marked: &str) -> Transpiled {
+    let mut js = String::new();
+    let mut call_sites = Vec::new();
+
+    for (index, line) in marked.split('\n').enumerate() {
+        if index > 0 {
+            js.push('\n');
+        }
+        let mut recorded = false;
+        let mut rest = line;
+        while let Some(start) = rest.find(js::SITE_START) {
+            js.push_str(&rest[..start]);
+            let after = &rest[start + js::SITE_START.len_utf8()..];
+            let end = after.find(js::SITE_END).expect("unterminated call site marker");
+            if !recorded {
+                call_sites.push((index + 1, after[..end].parse().unwrap()));
+                recorded = true;
+            }
+            rest = &after[end + js::SITE_END.len_utf8()..];
+        }
+        js.push_str(rest);
+    }
+
+    Transpiled { js, call_sites }
 }
 
 #[cfg(test)]
@@ -163,6 +204,27 @@ mod test {
             js("pilih f() {\nkalau 1 {\npilih g() {\nkalau 2 {\n}\n}\n}\n}"),
             "{\n  const _pilih0 = f();\n  if (_pilih0 === 1) {\n    {\n      const _pilih2 = g();\n      if (_pilih2 === 2) {\n      }\n    }\n  }\n}\n"
         );
+    }
+
+    #[test]
+    fn call_sites_map_js_lines_to_naskah_lines() {
+        let t = transpile("misal x = 1;\ntulis(x);\n\njika x {\n  tulis(\"a\");\n}\n");
+        assert_eq!(t.js, "let x = 1;\nconsole.log(x);\nif (x) {\n  console.log(\"a\");\n}\n");
+        assert_eq!(t.call_sites, vec![(2, 2), (4, 5)]);
+    }
+
+    #[test]
+    fn call_sites_use_the_first_call_on_a_line() {
+        let t = transpile("\ntulis(tulis(1));");
+        assert_eq!(t.js, "console.log(console.log(1));\n");
+        assert_eq!(t.call_sites, vec![(1, 2)]);
+    }
+
+    #[test]
+    fn only_tulis_has_a_call_site() {
+        let t = transpile("f(1);\ntanya(\"x\");");
+        assert_eq!(t.js, "f(1);\nprompt(\"x\");\n");
+        assert!(t.call_sites.is_empty());
     }
 
     #[test]
