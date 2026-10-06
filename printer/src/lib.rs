@@ -228,6 +228,139 @@ mod test {
     }
 
     #[test]
+    fn text_templates() {
+        assert_eq!(
+            js(r#"s = "Halo, {nama}! {a + 1}";"#),
+            "s = `Halo, ${nama}! ${a + 1}`;\n"
+        );
+        assert_eq!(js(r#"s = "{xs.panjang} item";"#), "s = `${xs.length} item`;\n");
+        // nested strings and calls inside an interpolation
+        assert_eq!(
+            js(r#"s = "a {f("x")} b";"#),
+            "s = `a ${f(\"x\")} b`;\n"
+        );
+        // templates inside templates
+        assert_eq!(js(r#"s = "{"[{x}]"}";"#), "s = `${`[${x}]`}`;\n");
+    }
+
+    #[test]
+    fn template_text_is_escaped_for_javascript() {
+        // a backtick in the text must not end the literal
+        assert_eq!(js(r#"s = "a`b {c}";"#), "s = `a\\`b ${c}`;\n");
+        // `\{` is a literal brace, and `${` in the output must not start an interpolation
+        assert_eq!(js(r#"s = "$\{x} {y}";"#), "s = `\\${x} ${y}`;\n");
+        assert_eq!(js(r#"s = "\{x} {y}";"#), "s = `{x} ${y}`;\n");
+        // a plain string keeps its escape
+        assert_eq!(js(r#"s = "\{x}";"#), "s = \"\\{x}\";\n");
+        assert_eq!(js(r#"s = "a } b";"#), "s = \"a } b\";\n");
+    }
+
+    #[test]
+    fn async_and_await() {
+        assert_eq!(
+            js("nanti fungsi ambil() {\ntunggu tunda(100);\nhasilkan 1;\n}\nmisal x = tunggu ambil();"),
+            "async function ambil() {\n  await new Promise((resolve) => setTimeout(resolve, 100));\n  return 1;\n}\nlet x = await ambil();\n"
+        );
+        assert_eq!(js("x = (tunggu a).b;"), "x = (await a).b;\n");
+        assert_eq!(js("x = tunggu a + b;"), "x = await a + b;\n");
+        assert_eq!(js("x = tunggu (a + b);"), "x = await (a + b);\n");
+        // tunda is only the built-in sleep when called with one argument
+        assert_eq!(js("tunda(1, 2);"), "tunda(1, 2);\n");
+    }
+
+    #[test]
+    fn function_values() {
+        assert_eq!(
+            js("xs.peta(fungsi (x) {\nhasilkan x * 2;\n});"),
+            "xs.map(function (x) {\n  return x * 2;\n});\n"
+        );
+        assert_eq!(
+            js("jika benar {\nxs.saring(fungsi (x) {\nhasilkan x;\n});\n}"),
+            "if (true) {\n  xs.filter(function (x) {\n    return x;\n  });\n}\n"
+        );
+        assert_eq!(js("f(nanti fungsi () { });"), "f(async function () {\n});\n");
+        assert_eq!(
+            js("misal g = fungsi (a, b) {\nhasilkan a;\n};"),
+            "let g = function (a, b) {\n  return a;\n};\n"
+        );
+        // nested function values keep their own indentation
+        assert_eq!(
+            js("f(fungsi () {\ng(fungsi () {\nlanjut;\n});\n});"),
+            "f(function () {\n  g(function () {\n    continue;\n  });\n});\n"
+        );
+    }
+
+    #[test]
+    fn list_helpers_and_errors_use_javascript_names() {
+        assert_eq!(js("x = xs.urut().cari(f);"), "x = xs.sort().find(f);\n");
+        assert_eq!(js("x = e.pesan;"), "x = e.message;\n");
+    }
+
+    #[test]
+    fn try_catch_finally_and_throw() {
+        assert_eq!(
+            js("coba {\nlempar baru Galat(\"x\");\n} tangkap galat {\ntulis(galat.pesan);\n} akhirnya {\n}"),
+            "try {\n  throw new Error(\"x\");\n} catch (galat) {\n  console.log(galat.message);\n} finally {\n}\n"
+        );
+        assert_eq!(js("coba {\n} tangkap {\n}"), "try {\n} catch {\n}\n");
+        assert_eq!(js("lempar \"teks\";"), "throw \"teks\";\n");
+        assert_eq!(js("x = Galat(\"y\");"), "x = Error(\"y\");\n");
+    }
+
+    #[test]
+    fn classes() {
+        let src = "kelas Kucing turunan Hewan {
+nanti ambil() {
+}
+buat(nama) {
+induk(nama);
+ini.umur = 1;
+}
+suara() {
+hasilkan induk.suara();
+}
+}
+misal k = baru Kucing(\"Tom\");";
+        assert_eq!(
+            js(src),
+            "class Kucing extends Hewan {
+  constructor(nama) {
+    super(nama);
+    this.umur = 1;
+  }
+  async ambil() {
+  }
+  suara() {
+    return super.suara();
+  }
+}
+let k = new Kucing(\"Tom\");
+"
+        );
+        assert_eq!(js("kelas A {\n}"), "class A {\n}\n");
+        // inside a block the class is indented with it
+        assert_eq!(
+            js("jika benar {\nkelas A {\nm() {\n}\n}\n}"),
+            "if (true) {\n  class A {\n    m() {\n    }\n  }\n}\n"
+        );
+    }
+
+    #[test]
+    fn new_with_member_callee() {
+        assert_eq!(js("x = baru a.B(1, 2).c;"), "x = new a.B(1, 2).c;\n");
+    }
+
+    #[test]
+    fn call_sites_inside_function_values_and_templates() {
+        let t = transpile("xs.peta(fungsi (x) {\ntulis(x);\n});\ntulis(\"a {x}\");");
+        assert_eq!(
+            t.js,
+            "xs.map(function (x) {\n  console.log(x);\n});\nconsole.log(`a ${x}`);\n"
+        );
+        assert_eq!(t.call_sites, vec![(2, 2), (4, 4)]);
+    }
+
+    #[test]
     fn bare_block_is_indented() {
         assert_eq!(
             js("jika x {\n{\nlanjut;\n}\n}"),

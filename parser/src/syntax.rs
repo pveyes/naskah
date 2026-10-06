@@ -1,13 +1,14 @@
 use super::ast::*;
-use super::lexer::{lex, ParseError, Tok, Token};
+use super::lexer::{lex, scan_braces, ParseError, Tok, Token};
 
 type Result<T> = std::result::Result<T, ParseError>;
 
-// `setiap`, `dari`, `sampai`, `langkah` and `dalam` are only special inside
-// `untuk`, so they stay usable as names.
-const RESERVED: [&str; 19] = [
+// `setiap`, `dari`, `sampai`, `langkah`, `dalam`, `turunan` and `buat` are only
+// special in one place, so they stay usable as names.
+const RESERVED: [&str; 29] = [
     "misal", "konstan", "jika", "lain", "selama", "ulang", "untuk", "pilih", "kalau", "berhenti",
-    "lanjut", "fungsi", "hasilkan", "benar", "salah", "kosong", "dan", "atau", "bukan",
+    "lanjut", "fungsi", "hasilkan", "benar", "salah", "kosong", "dan", "atau", "bukan", "coba",
+    "tangkap", "akhirnya", "lempar", "nanti", "tunggu", "kelas", "baru", "ini", "induk",
 ];
 
 struct Parser {
@@ -28,6 +29,11 @@ fn describe(tok: &Tok) -> String {
 impl Parser {
     fn peek(&self) -> &Tok {
         &self.tokens[self.pos].tok
+    }
+
+    fn peek_at(&self, n: usize) -> &Tok {
+        let i = (self.pos + n).min(self.tokens.len() - 1);
+        &self.tokens[i].tok
     }
 
     fn advance(&mut self) {
@@ -132,21 +138,40 @@ impl Parser {
             return Ok(Statement::VariableDeclaration(VariableDeclaration { kind, id, value }));
         }
 
-        if self.eat_word("fungsi") {
-            let id = self.identifier()?;
-            self.expect_punct("(")?;
-            let mut params = Vec::new();
-            if !self.is_punct(")") {
-                loop {
-                    params.push(self.identifier()?);
-                    if !self.eat_punct(",") {
-                        break;
-                    }
-                }
+        // `fungsi nama(` declares a function; `fungsi (` is a function value,
+        // which falls through to the expression statement below
+        let nanti = self.is_word("nanti");
+        let at = if nanti { 1 } else { 0 };
+        if matches!(self.peek_at(at), Tok::Ident(w) if w == "fungsi")
+            && matches!(self.peek_at(at + 1), Tok::Ident(_))
+        {
+            if nanti {
+                self.advance();
             }
-            self.expect_punct(")")?;
+            self.advance();
+            let id = self.identifier()?;
+            let params = self.params()?;
             let body = self.block()?;
-            return Ok(Statement::FunctionDeclaration(FunctionDeclaration { id, params, body }));
+            return Ok(Statement::FunctionDeclaration(FunctionDeclaration {
+                id,
+                params,
+                body,
+                is_async: nanti,
+            }));
+        }
+
+        if self.eat_word("kelas") {
+            return self.class_declaration();
+        }
+
+        if self.eat_word("coba") {
+            return self.try_statement();
+        }
+
+        if self.eat_word("lempar") {
+            let value = self.expression()?;
+            self.expect_punct(";")?;
+            return Ok(Statement::Throw(value));
         }
 
         if self.is_word("jika") {
@@ -190,6 +215,85 @@ impl Parser {
         let e = self.expression()?;
         self.expect_punct(";")?;
         Ok(Statement::Expression(e))
+    }
+
+    /// `(a, b)`
+    fn params(&mut self) -> Result<Vec<Identifier>> {
+        self.expect_punct("(")?;
+        self.comma_separated(")", Parser::identifier)
+    }
+
+    fn class_declaration(&mut self) -> Result<Statement> {
+        let id = self.identifier()?;
+        let parent = if self.eat_word("turunan") { Some(self.identifier()?) } else { None };
+        self.expect_punct("{")?;
+
+        let mut constructor = None;
+        let mut methods = Vec::new();
+        while !self.is_punct("}") {
+            if *self.peek() == Tok::Eof {
+                return self.error(String::from("diharapkan `}`, ditemukan akhir kode"));
+            }
+
+            let is_async = self.eat_word("nanti");
+            let (line, col) = (self.tokens[self.pos].line, self.tokens[self.pos].col);
+            let name = match self.peek().clone() {
+                Tok::Ident(name) => {
+                    self.advance();
+                    name
+                }
+                other => {
+                    return self.error(format!(
+                        "diharapkan nama metode, ditemukan {}",
+                        describe(&other)
+                    ))
+                }
+            };
+            let params = self.params()?;
+            let body = self.block()?;
+
+            if name == "buat" {
+                let problem = if is_async {
+                    Some("`buat` tidak bisa diberi `nanti`")
+                } else if constructor.is_some() {
+                    Some("sebuah kelas hanya boleh punya satu `buat`")
+                } else {
+                    None
+                };
+                if let Some(message) = problem {
+                    return Err(ParseError { message: String::from(message), line, col });
+                }
+                constructor = Some(Constructor { params, body });
+            } else {
+                methods.push(Method { name, params, body, is_async });
+            }
+        }
+        self.advance(); // }
+
+        Ok(Statement::ClassDeclaration(ClassDeclaration { id, parent, constructor, methods }))
+    }
+
+    fn try_statement(&mut self) -> Result<Statement> {
+        let block = self.block()?;
+
+        let handler = if self.eat_word("tangkap") {
+            let param = match self.peek() {
+                Tok::Ident(_) => Some(self.identifier()?),
+                _ => None,
+            };
+            Some(CatchClause { param, body: self.block()? })
+        } else {
+            None
+        };
+        let finalizer = if self.eat_word("akhirnya") { Some(self.block()?) } else { None };
+
+        if handler.is_none() && finalizer.is_none() {
+            return self.error(format!(
+                "`coba` membutuhkan `tangkap` atau `akhirnya`, ditemukan {}",
+                describe(self.peek())
+            ));
+        }
+        Ok(Statement::Try(TryStatement { block, handler, finalizer }))
     }
 
     fn expect_word(&mut self, w: &str) -> Result<()> {
@@ -396,6 +500,10 @@ impl Parser {
     }
 
     fn unary(&mut self) -> Result<Expression> {
+        if self.eat_word("tunggu") {
+            let argument = self.unary()?;
+            return Ok(Expression::Await(Box::new(argument)));
+        }
         if self.eat_punct("-") {
             let argument = self.unary()?;
             return Ok(unary(UnaryOperator::Negate, argument));
@@ -439,6 +547,7 @@ impl Parser {
                     Expression::Identifier(_)
                     | Expression::Member(_)
                     | Expression::Index(_)
+                    | Expression::Super
                     | Expression::CallExpression(_) => {}
                     _ => return self.error(String::from("ini bukan fungsi dan tidak bisa dipanggil")),
                 }
@@ -496,9 +605,10 @@ impl Parser {
                 self.advance();
                 Ok(Expression::Literal(Literal::Number(n)))
             }
-            Tok::Str(s) => {
+            Tok::Str(raw) => {
+                let (line, col) = (self.tokens[self.pos].line, self.tokens[self.pos].col);
                 self.advance();
-                Ok(Expression::Literal(Literal::String(s)))
+                string_or_template(&raw, line, col)
             }
             Tok::Punct("(") => {
                 self.advance();
@@ -522,10 +632,142 @@ impl Parser {
                 self.advance();
                 Ok(Expression::Literal(Literal::Null))
             }
+            Tok::Ident(word) if word == "ini" => {
+                self.advance();
+                Ok(Expression::This)
+            }
+            Tok::Ident(word) if word == "induk" => {
+                self.advance();
+                if !self.is_punct("(") && !self.is_punct(".") {
+                    return self.error(String::from(
+                        "`induk` hanya bisa dipakai sebagai `induk(...)` atau `induk.nama`",
+                    ));
+                }
+                Ok(Expression::Super)
+            }
+            Tok::Ident(word) if word == "fungsi" || word == "nanti" => {
+                let is_async = word == "nanti";
+                self.advance();
+                if is_async {
+                    self.expect_word("fungsi")?;
+                }
+                let params = self.params()?;
+                let body = self.block()?;
+                Ok(Expression::Function(Box::new(FunctionExpression { params, body, is_async })))
+            }
+            Tok::Ident(word) if word == "baru" => {
+                self.advance();
+                let mut callee = Expression::Identifier(self.identifier()?);
+                while self.eat_punct(".") {
+                    match self.peek().clone() {
+                        Tok::Ident(property) => {
+                            self.advance();
+                            callee = Expression::Member(Box::new(MemberExpression {
+                                object: callee,
+                                property,
+                            }));
+                        }
+                        other => {
+                            return self.error(format!(
+                                "diharapkan nama properti, ditemukan {}",
+                                describe(&other)
+                            ))
+                        }
+                    }
+                }
+                self.expect_punct("(")?;
+                let arguments = self.comma_separated(")", Parser::expression)?;
+                Ok(Expression::New(Box::new(NewExpression { callee, arguments })))
+            }
             Tok::Ident(_) => Ok(Expression::Identifier(self.identifier()?)),
             other => self.error(format!("ekspresi tidak lengkap, ditemukan {}", describe(&other))),
         }
     }
+}
+
+fn shift(mut e: ParseError, line: usize, col: usize) -> ParseError {
+    if e.line == 1 {
+        e.col += col - 1;
+    }
+    e.line += line - 1;
+    e
+}
+
+/// Parse the expression between `{` and `}` of a text. `line`/`col` locate its
+/// first character in the whole source so errors point at the right place.
+fn embedded(src: &str, line: usize, col: usize) -> Result<Expression> {
+    if src.trim().is_empty() {
+        return Err(ParseError {
+            message: String::from("ekspresi di dalam `{ }` kosong, tulis `\\{` untuk kurung biasa"),
+            line,
+            col,
+        });
+    }
+
+    let mut tokens = lex(src).map_err(|e| shift(e, line, col))?;
+    for t in &mut tokens {
+        if t.line == 1 {
+            t.col += col - 1;
+        }
+        t.line += line - 1;
+    }
+
+    let mut parser = Parser { tokens, pos: 0 };
+    let e = parser.expression()?;
+    if *parser.peek() != Tok::Eof {
+        return parser.error(format!(
+            "diharapkan akhir ekspresi, ditemukan {}",
+            describe(parser.peek())
+        ));
+    }
+    Ok(e)
+}
+
+/// A text with `{ekspresi}` in it becomes a template, anything else a plain string.
+/// `line`/`col` is where the opening quote is.
+fn string_or_template(raw: &str, line: usize, col: usize) -> Result<Expression> {
+    let chars: Vec<char> = raw.chars().collect();
+    let mut parts = Vec::new();
+    let mut text = String::new();
+    let mut i = 0;
+
+    while i < chars.len() {
+        match chars[i] {
+            '\\' => {
+                text.push('\\');
+                if let Some(next) = chars.get(i + 1) {
+                    text.push(*next);
+                }
+                i += 2;
+            }
+            '{' => {
+                let end = scan_braces(&chars, i).map_err(|_| ParseError {
+                    message: String::from("tanda `{` di dalam teks tidak ditutup"),
+                    line,
+                    col,
+                })?;
+                let inner: String = chars[i + 1..end - 1].iter().collect();
+                if !text.is_empty() {
+                    parts.push(TemplatePart::Text(std::mem::take(&mut text)));
+                }
+                // +1 skips the opening quote, +1 skips the `{`
+                parts.push(TemplatePart::Expression(embedded(&inner, line, col + 1 + i + 1)?));
+                i = end;
+            }
+            c => {
+                text.push(c);
+                i += 1;
+            }
+        }
+    }
+
+    if parts.is_empty() {
+        return Ok(Expression::Literal(Literal::String(String::from(raw))));
+    }
+    if !text.is_empty() {
+        parts.push(TemplatePart::Text(text));
+    }
+    Ok(Expression::Template(parts))
 }
 
 fn binary(left: Expression, operator: Operator, right: Expression) -> Expression {
@@ -802,6 +1044,7 @@ mod test {
                         ident("b")
                     )))])
                 },
+                is_async: false,
             })]
         );
         assert_eq!(
@@ -810,6 +1053,7 @@ mod test {
                 id: id("diam"),
                 params: vec![],
                 body: BlockStatement { body: Some(vec![Statement::Return(None)]) },
+                is_async: false,
             })]
         );
     }
@@ -1008,6 +1252,261 @@ mod test {
             err("pilih x { kalau 1 { } lain { } kalau 2 { } }"),
             "baris 1, kolom 32: diharapkan `}`, ditemukan `kalau`"
         );
+    }
+
+    fn tpl(parts: Vec<TemplatePart>) -> Expression {
+        Expression::Template(parts)
+    }
+
+    fn t_text(s: &str) -> TemplatePart {
+        TemplatePart::Text(String::from(s))
+    }
+
+    fn t_expr(e: Expression) -> TemplatePart {
+        TemplatePart::Expression(e)
+    }
+
+    #[test]
+    fn text_templates() {
+        assert_eq!(
+            expr("\"Halo, {nama}!\""),
+            tpl(vec![t_text("Halo, "), t_expr(ident("nama")), t_text("!")])
+        );
+        assert_eq!(
+            expr("\"{a}{b + 1}\""),
+            tpl(vec![
+                t_expr(ident("a")),
+                t_expr(bin(ident("b"), Operator::Addition, num(1.0))),
+            ])
+        );
+        // strings and braces inside an interpolation
+        assert_eq!(
+            expr("\"x {f(\"}\")} y\""),
+            tpl(vec![t_text("x "), t_expr(call("f", vec![text("}")])), t_text(" y")])
+        );
+        assert_eq!(
+            expr("\"{ {a: 1}.a }\""),
+            tpl(vec![t_expr(member(
+                Expression::Object(vec![Property {
+                    key: PropertyKey::Name(String::from("a")),
+                    value: num(1.0),
+                }]),
+                "a"
+            ))])
+        );
+        // an escaped brace is plain text and the string stays a literal
+        assert_eq!(expr("\"\\{a}\""), text("\\{a}"));
+        assert_eq!(expr("\"a } b\""), text("a } b"));
+    }
+
+    #[test]
+    fn template_errors_point_inside_the_text() {
+        assert_eq!(
+            err("misal s = \"hai {1 +}\";"),
+            "baris 1, kolom 20: ekspresi tidak lengkap, ditemukan akhir kode"
+        );
+        assert_eq!(
+            err("\n\n  tulis(\"a {x y}\");"),
+            "baris 3, kolom 15: diharapkan akhir ekspresi, ditemukan `y`"
+        );
+        assert_eq!(
+            err("misal s = \"a {}\";"),
+            "baris 1, kolom 15: ekspresi di dalam `{ }` kosong, tulis `\\{` untuk kurung biasa"
+        );
+        assert_eq!(
+            err("misal s = \"a {b\";"),
+            "baris 1, kolom 11: tanda `{` di dalam teks tidak ditutup, tulis `\\{` untuk kurung biasa"
+        );
+    }
+
+    #[test]
+    fn function_values() {
+        assert_eq!(
+            expr("xs.peta(fungsi (x) { hasilkan x; })"),
+            Expression::CallExpression(CallExpression {
+                callee: Box::new(member(ident("xs"), "peta")),
+                arguments: vec![Expression::Function(Box::new(FunctionExpression {
+                    params: vec![id("x")],
+                    body: block(vec![Statement::Return(Some(ident("x")))]),
+                    is_async: false,
+                }))],
+                line: 1,
+            })
+        );
+        assert_eq!(
+            ok("misal f = fungsi () { };"),
+            vec![Statement::VariableDeclaration(VariableDeclaration {
+                kind: VariableKind::Let,
+                id: id("f"),
+                value: Expression::Function(Box::new(FunctionExpression {
+                    params: vec![],
+                    body: block(vec![]),
+                    is_async: false,
+                })),
+            })]
+        );
+        // a name after `fungsi` is a declaration, so it is not allowed in an expression
+        assert_eq!(
+            err("misal f = fungsi g() { };"),
+            "baris 1, kolom 18: diharapkan `(`, ditemukan `g`"
+        );
+    }
+
+    #[test]
+    fn async_functions_and_tunggu() {
+        assert_eq!(
+            ok("nanti fungsi ambil() { }"),
+            vec![Statement::FunctionDeclaration(FunctionDeclaration {
+                id: id("ambil"),
+                params: vec![],
+                body: block(vec![]),
+                is_async: true,
+            })]
+        );
+        assert_eq!(
+            expr("nanti fungsi (a) { }"),
+            Expression::Function(Box::new(FunctionExpression {
+                params: vec![id("a")],
+                body: block(vec![]),
+                is_async: true,
+            }))
+        );
+        assert_eq!(expr("tunggu f()"), Expression::Await(Box::new(call("f", vec![]))));
+        // tunggu binds like a unary operator: (tunggu a) + b
+        assert_eq!(
+            expr("tunggu a + b"),
+            bin(Expression::Await(Box::new(ident("a"))), Operator::Addition, ident("b"))
+        );
+        assert_eq!(
+            err("nanti x;"),
+            "baris 1, kolom 7: diharapkan `fungsi`, ditemukan `x`"
+        );
+    }
+
+    #[test]
+    fn try_catch_finally() {
+        assert_eq!(
+            ok("coba { lanjut; } tangkap galat { berhenti; } akhirnya { }"),
+            vec![Statement::Try(TryStatement {
+                block: block(vec![Statement::Continue]),
+                handler: Some(CatchClause {
+                    param: Some(id("galat")),
+                    body: block(vec![Statement::Break]),
+                }),
+                finalizer: Some(block(vec![])),
+            })]
+        );
+        assert_eq!(
+            ok("coba { } tangkap { }"),
+            vec![Statement::Try(TryStatement {
+                block: block(vec![]),
+                handler: Some(CatchClause { param: None, body: block(vec![]) }),
+                finalizer: None,
+            })]
+        );
+        assert_eq!(
+            err("coba { } x;"),
+            "baris 1, kolom 10: `coba` membutuhkan `tangkap` atau `akhirnya`, ditemukan `x`"
+        );
+    }
+
+    #[test]
+    fn throw_and_new() {
+        assert_eq!(
+            ok("lempar baru Galat(\"x\");"),
+            vec![Statement::Throw(Expression::New(Box::new(NewExpression {
+                callee: ident("Galat"),
+                arguments: vec![text("x")],
+            })))]
+        );
+        assert_eq!(
+            expr("baru a.B(1).c"),
+            member(
+                Expression::New(Box::new(NewExpression {
+                    callee: member(ident("a"), "B"),
+                    arguments: vec![num(1.0)],
+                })),
+                "c"
+            )
+        );
+        assert_eq!(err("baru A;"), "baris 1, kolom 7: diharapkan `(`, ditemukan `;`");
+    }
+
+    #[test]
+    fn classes() {
+        let body = ok("kelas Kucing turunan Hewan {
+              buat(nama) { induk(nama); ini.suara = 1; }
+              nanti ambil() { }
+              suara() { induk.suara(); }
+            }");
+        assert_eq!(
+            body,
+            vec![Statement::ClassDeclaration(ClassDeclaration {
+                id: id("Kucing"),
+                parent: Some(id("Hewan")),
+                constructor: Some(Constructor {
+                    params: vec![id("nama")],
+                    body: block(vec![
+                        Statement::Expression(Expression::CallExpression(CallExpression {
+                            callee: Box::new(Expression::Super),
+                            arguments: vec![ident("nama")],
+                            line: 2,
+                        })),
+                        Statement::Expression(assign(member(Expression::This, "suara"), num(1.0))),
+                    ]),
+                }),
+                methods: vec![
+                    Method {
+                        name: String::from("ambil"),
+                        params: vec![],
+                        body: block(vec![]),
+                        is_async: true,
+                    },
+                    Method {
+                        name: String::from("suara"),
+                        params: vec![],
+                        body: block(vec![Statement::Expression(Expression::CallExpression(
+                            CallExpression {
+                                callee: Box::new(member(Expression::Super, "suara")),
+                                arguments: vec![],
+                                line: 4,
+                            }
+                        ))]),
+                        is_async: false,
+                    },
+                ],
+            })]
+        );
+        assert_eq!(
+            ok("kelas A { }"),
+            vec![Statement::ClassDeclaration(ClassDeclaration {
+                id: id("A"),
+                parent: None,
+                constructor: None,
+                methods: vec![],
+            })]
+        );
+    }
+
+    #[test]
+    fn class_errors() {
+        assert_eq!(
+            err("kelas A { buat() { } buat() { } }"),
+            "baris 1, kolom 22: sebuah kelas hanya boleh punya satu `buat`"
+        );
+        assert_eq!(
+            err("kelas A { nanti buat() { } }"),
+            "baris 1, kolom 17: `buat` tidak bisa diberi `nanti`"
+        );
+        assert_eq!(
+            err("misal x = induk;"),
+            "baris 1, kolom 16: `induk` hanya bisa dipakai sebagai `induk(...)` atau `induk.nama`"
+        );
+        assert_eq!(
+            err("ini = 1;"),
+            "baris 1, kolom 5: sebelah kiri `=` harus berupa variabel, properti, atau elemen daftar"
+        );
+        assert_eq!(err("kelas A {"), "baris 1, kolom 10: diharapkan `}`, ditemukan akhir kode");
     }
 
     #[test]

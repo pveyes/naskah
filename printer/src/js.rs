@@ -121,7 +121,7 @@ fn precedence(e: &Expression) -> u8 {
     match e {
         Expression::Assignment(_) => PREC_ASSIGNMENT,
         Expression::BinaryExpression(b) => operator_precedence(&b.operator),
-        Expression::UnaryExpression(_) => PREC_UNARY,
+        Expression::UnaryExpression(_) | Expression::Await(_) => PREC_UNARY,
         _ => PREC_ATOM,
     }
 }
@@ -141,6 +141,15 @@ fn builtin(name: &str) -> &str {
     match name {
         "tulis" => "console.log",
         "tanya" => "prompt",
+        "Galat" => "Error",
+        other => other,
+    }
+}
+
+/// Names that mean something else when used as a value rather than called.
+fn builtin_value(name: &str) -> &str {
+    match name {
+        "Galat" => "Error",
         other => other,
     }
 }
@@ -153,6 +162,11 @@ fn property_name(name: &str) -> &str {
         "tambah" => "push",
         "gabung" => "join",
         "balik" => "reverse",
+        "peta" => "map",
+        "saring" => "filter",
+        "cari" => "find",
+        "urut" => "sort",
+        "pesan" => "message",
         other => other,
     }
 }
@@ -163,6 +177,12 @@ pub const SITE_START: char = '\u{E000}';
 pub const SITE_END: char = '\u{E001}';
 
 fn print_call_expression(c: CallExpression) -> String {
+    // tunda(ms) is a sleep: a promise that resolves after `ms` milliseconds
+    if c.arguments.len() == 1 && matches!(&*c.callee, Expression::Identifier(i) if i.name == "tunda") {
+        let ms = print_expression(c.arguments.into_iter().next().unwrap());
+        return format!("new Promise((resolve) => setTimeout(resolve, {}))", ms);
+    }
+
     let callee = match *c.callee {
         Expression::Identifier(i) if i.name == "tulis" => {
             format!("{}{}{}{}", SITE_START, c.line, SITE_END, builtin(&i.name))
@@ -219,6 +239,112 @@ fn print_assignment_expression(s: AssignmentExpression) -> String {
     format!("{} = {}", print_expression(*s.target), print_expression(*s.value))
 }
 
+fn print_new_expression(n: Box<NewExpression>) -> String {
+    let n = *n;
+    let callee = match n.callee {
+        Expression::Identifier(i) => builtin(&i.name).to_string(),
+        other => print_expression(other),
+    };
+    let arguments: Vec<String> = n.arguments.into_iter().map(print_expression).collect();
+    format!("new {}({})", callee, arguments.join(", "))
+}
+
+fn print_await_expression(argument: Box<Expression>) -> String {
+    let parens = precedence(&argument) < PREC_UNARY;
+    format!("await {}", print_operand(*argument, parens))
+}
+
+fn print_params(params: Vec<Identifier>) -> String {
+    let names: Vec<String> = params.into_iter().map(print_identifier).collect();
+    names.join(", ")
+}
+
+/// A function value's body is printed with no indentation; `expr_at` lines it
+/// up with the statement it ends up in.
+fn print_function_expression(f: Box<FunctionExpression>) -> String {
+    let f = *f;
+    format!(
+        "{}function ({}) {}",
+        if f.is_async { "async " } else { "" },
+        print_params(f.params),
+        print_block_statement(f.body, 0)
+    )
+}
+
+/// Text as it appears inside a JS template literal.
+fn template_text(raw: &str) -> String {
+    let mut out = String::new();
+    let chars: Vec<char> = raw.chars().collect();
+    let mut i = 0;
+
+    // `$` right before a `{` would start a JS interpolation, and a backtick would end the literal
+    fn push(out: &mut String, c: char) {
+        let trailing_backslashes = out
+            .strip_suffix('$')
+            .map(|rest| rest.chars().rev().take_while(|c| *c == '\\').count());
+        match c {
+            '`' => out.push_str("\\`"),
+            '{' if trailing_backslashes.map_or(false, |n| n % 2 == 0) => {
+                out.pop();
+                out.push_str("\\${");
+            }
+            _ => out.push(c),
+        }
+    }
+
+    while i < chars.len() {
+        match (chars[i], chars.get(i + 1)) {
+            // `\{` is how Naskah writes a literal brace
+            ('\\', Some('{')) => {
+                push(&mut out, '{');
+                i += 2;
+            }
+            ('\\', Some(next)) => {
+                out.push('\\');
+                out.push(*next);
+                i += 2;
+            }
+            (c, _) => {
+                push(&mut out, c);
+                i += 1;
+            }
+        }
+    }
+    out
+}
+
+fn print_template(parts: Vec<TemplatePart>) -> String {
+    let mut out = String::from("`");
+    for part in parts {
+        match part {
+            TemplatePart::Text(text) => out.push_str(&template_text(&text)),
+            TemplatePart::Expression(e) => {
+                out.push_str("${");
+                out.push_str(&print_expression(e));
+                out.push('}');
+            }
+        }
+    }
+    out.push('`');
+    out
+}
+
+/// An expression inside a statement at `depth`: lines after the first (only
+/// function bodies have any) are indented to match the statement.
+fn expr_at(e: Expression, depth: u8) -> String {
+    let printed = print_expression(e);
+    if depth == 0 || !printed.contains('\n') {
+        return printed;
+    }
+    let indent = insert_indent(depth);
+    printed
+        .split('\n')
+        .enumerate()
+        .map(|(i, line)| if i == 0 { line.to_string() } else { format!("{}{}", indent, line) })
+        .collect::<Vec<_>>()
+        .join("\n")
+}
+
 fn print_expression(e: Expression) -> String {
     match e {
         Expression::Assignment(e) => print_assignment_expression(e),
@@ -226,11 +352,17 @@ fn print_expression(e: Expression) -> String {
         Expression::BinaryExpression(b) => print_binary_expression(b),
         Expression::UnaryExpression(u) => print_unary_expression(u),
         Expression::CallExpression(c) => print_call_expression(c),
-        Expression::Identifier(i) => print_identifier(i),
+        Expression::Identifier(i) => builtin_value(&i.name).to_string(),
         Expression::Member(m) => print_member_expression(m),
         Expression::Index(i) => print_index_expression(i),
         Expression::List(items) => print_list(items),
         Expression::Object(properties) => print_object(properties),
+        Expression::Template(parts) => print_template(parts),
+        Expression::Function(f) => print_function_expression(f),
+        Expression::New(n) => print_new_expression(n),
+        Expression::Await(a) => print_await_expression(a),
+        Expression::This => String::from("this"),
+        Expression::Super => String::from("super"),
     }
 }
 
@@ -259,7 +391,7 @@ fn print_variable_declaration(v: VariableDeclaration, depth: u8) -> String {
         VariableKind::Const => "const ",
     };
     let id = print_identifier(v.id);
-    let val = print_expression(v.value);
+    let val = expr_at(v.value, depth);
     let mut st = String::new();
     st.push_str(&insert_indent(depth));
     st.push_str(kind);
@@ -291,7 +423,7 @@ fn print_if_statement(i: IfStatement, depth: u8, inside_else: bool) -> String {
         res.push_str(&insert_indent(depth));
     }
     res.push_str("if (");
-    res.push_str(&print_expression(i.test));
+    res.push_str(&expr_at(i.test, depth));
     res.push_str(") ");
     res.push_str(&print_block_statement(i.consequent, depth));
     res.push_str(&else_statement);
@@ -309,7 +441,7 @@ fn print_loop_statement(b: BlockStatement, depth: u8) -> String {
 fn print_while_statement(w: WhileStatement, depth: u8) -> String {
     let mut res = insert_indent(depth);
     res.push_str("while (");
-    res.push_str(&print_expression(w.test));
+    res.push_str(&expr_at(w.test, depth));
     res.push_str(") ");
     res.push_str(&print_block_statement(w.body, depth));
     res
@@ -322,17 +454,17 @@ fn print_for_range_statement(f: ForRangeStatement, depth: u8) -> String {
     };
     let var = f.var.name;
     let update = match f.step {
-        Some(step) => format!("{} += {}", var, print_expression(step)),
+        Some(step) => format!("{} += {}", var, expr_at(step, depth)),
         None => format!("{}++", var),
     };
     format!(
         "{}for (let {} = {}; {} {} {}; {}) {}",
         insert_indent(depth),
         var,
-        print_expression(f.from),
+        expr_at(f.from, depth),
         var,
         if descending { ">=" } else { "<=" },
-        print_expression(f.to),
+        expr_at(f.to, depth),
         update,
         print_block_statement(f.body, depth)
     )
@@ -343,7 +475,7 @@ fn print_for_each_statement(f: ForEachStatement, depth: u8) -> String {
         "{}for (let {} of {}) {}",
         insert_indent(depth),
         f.var.name,
-        print_expression(f.iterable),
+        expr_at(f.iterable, depth),
         print_block_statement(f.body, depth)
     )
 }
@@ -406,10 +538,65 @@ fn print_switch_statement(s: SwitchStatement, depth: u8) -> String {
 }
 
 fn print_function_declaration(f: FunctionDeclaration, depth: u8) -> String {
-    let params: Vec<String> = f.params.into_iter().map(print_identifier).collect();
     let mut res = insert_indent(depth);
-    res.push_str(&format!("function {}({}) ", f.id.name, params.join(", ")));
+    res.push_str(&format!(
+        "{}function {}({}) ",
+        if f.is_async { "async " } else { "" },
+        f.id.name,
+        print_params(f.params)
+    ));
     res.push_str(&print_block_statement(f.body, depth));
+    res
+}
+
+fn print_class_declaration(c: ClassDeclaration, depth: u8) -> String {
+    let inner = insert_indent(depth + 1);
+    let mut res = insert_indent(depth);
+    res.push_str(&format!("class {}", c.id.name));
+    if let Some(parent) = c.parent {
+        res.push_str(&format!(" extends {}", parent.name));
+    }
+    res.push_str(" {\n");
+
+    if let Some(ctor) = c.constructor {
+        res.push_str(&format!(
+            "{}constructor({}) {}\n",
+            inner,
+            print_params(ctor.params),
+            print_block_statement(ctor.body, depth + 1)
+        ));
+    }
+    for m in c.methods {
+        res.push_str(&format!(
+            "{}{}{}({}) {}\n",
+            inner,
+            if m.is_async { "async " } else { "" },
+            property_name(&m.name),
+            print_params(m.params),
+            print_block_statement(m.body, depth + 1)
+        ));
+    }
+
+    res.push_str(&insert_indent(depth));
+    res.push_str("}");
+    res
+}
+
+fn print_try_statement(t: TryStatement, depth: u8) -> String {
+    let mut res = insert_indent(depth);
+    res.push_str("try ");
+    res.push_str(&print_block_statement(t.block, depth));
+    if let Some(handler) = t.handler {
+        match handler.param {
+            Some(param) => res.push_str(&format!(" catch ({}) ", param.name)),
+            None => res.push_str(" catch "),
+        }
+        res.push_str(&print_block_statement(handler.body, depth));
+    }
+    if let Some(finalizer) = t.finalizer {
+        res.push_str(" finally ");
+        res.push_str(&print_block_statement(finalizer, depth));
+    }
     res
 }
 
@@ -418,7 +605,7 @@ fn print_return_statement(value: Option<Expression>, depth: u8) -> String {
     res.push_str("return");
     if let Some(e) = value {
         res.push_str(" ");
-        res.push_str(&print_expression(e));
+        res.push_str(&expr_at(e, depth));
     }
     res.push_str(";");
     res
@@ -430,7 +617,7 @@ fn print_statement(s: Statement, depth: u8) -> String {
         Statement::Expression(e) => {
             let mut res = String::new();
             res.push_str(&insert_indent(depth));
-            let printed = print_expression(e);
+            let printed = expr_at(e, depth);
             if printed.starts_with('{') {
                 // an object literal here would be read as a block
                 res.push_str(&format!("({})", printed));
@@ -450,6 +637,9 @@ fn print_statement(s: Statement, depth: u8) -> String {
         Statement::Switch(s) => print_switch_statement(s, depth),
         Statement::FunctionDeclaration(f) => print_function_declaration(f, depth),
         Statement::Return(e) => print_return_statement(e, depth),
+        Statement::ClassDeclaration(c) => print_class_declaration(c, depth),
+        Statement::Try(t) => print_try_statement(t, depth),
+        Statement::Throw(e) => format!("{}throw {};", insert_indent(depth), expr_at(e, depth)),
         Statement::Break => insert_indent(depth) + &String::from("break;"),
         Statement::Continue => insert_indent(depth) + &String::from("continue;"),
     };

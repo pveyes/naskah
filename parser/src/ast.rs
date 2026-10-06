@@ -80,6 +80,38 @@ pub enum Expression {
     Index(Box<IndexExpression>),
     List(Vec<Expression>),
     Object(Vec<Property>),
+    /// `"Halo, {nama}!"`
+    Template(Vec<TemplatePart>),
+    /// `fungsi (x) { }` and `nanti fungsi (x) { }`
+    Function(Box<FunctionExpression>),
+    /// `baru Kelas(argumen)`
+    New(Box<NewExpression>),
+    /// `tunggu ekspresi`
+    Await(Box<Expression>),
+    /// `ini`
+    This,
+    /// `induk`
+    Super,
+}
+
+#[derive(PartialEq, Debug, Clone)]
+pub enum TemplatePart {
+    /// Raw text, escape sequences left as written.
+    Text(String),
+    Expression(Expression),
+}
+
+#[derive(PartialEq, Debug, Clone)]
+pub struct FunctionExpression {
+    pub params: Vec<Identifier>,
+    pub body: BlockStatement,
+    pub is_async: bool,
+}
+
+#[derive(PartialEq, Debug, Clone)]
+pub struct NewExpression {
+    pub callee: Expression,
+    pub arguments: Vec<Expression>,
 }
 
 #[derive(PartialEq, Debug, Clone)]
@@ -129,6 +161,45 @@ pub struct FunctionDeclaration {
     pub id: Identifier,
     pub params: Vec<Identifier>,
     pub body: BlockStatement,
+    pub is_async: bool,
+}
+
+#[derive(PartialEq, Debug, Clone)]
+pub struct Method {
+    pub name: String,
+    pub params: Vec<Identifier>,
+    pub body: BlockStatement,
+    pub is_async: bool,
+}
+
+/// `kelas Kucing turunan Hewan { buat(nama) { } suara() { } }`
+#[derive(PartialEq, Debug, Clone)]
+pub struct ClassDeclaration {
+    pub id: Identifier,
+    pub parent: Option<Identifier>,
+    /// `buat(...) { }`
+    pub constructor: Option<Constructor>,
+    pub methods: Vec<Method>,
+}
+
+#[derive(PartialEq, Debug, Clone)]
+pub struct Constructor {
+    pub params: Vec<Identifier>,
+    pub body: BlockStatement,
+}
+
+#[derive(PartialEq, Debug, Clone)]
+pub struct CatchClause {
+    pub param: Option<Identifier>,
+    pub body: BlockStatement,
+}
+
+/// `coba { } tangkap galat { } akhirnya { }`
+#[derive(PartialEq, Debug, Clone)]
+pub struct TryStatement {
+    pub block: BlockStatement,
+    pub handler: Option<CatchClause>,
+    pub finalizer: Option<BlockStatement>,
 }
 
 #[derive(PartialEq, Debug, Clone)]
@@ -195,6 +266,9 @@ pub enum Statement {
     Expression(Expression),
     VariableDeclaration(VariableDeclaration),
     FunctionDeclaration(FunctionDeclaration),
+    ClassDeclaration(ClassDeclaration),
+    Try(TryStatement),
+    Throw(Expression),
     BlockStatement(BlockStatement),
     Loop(BlockStatement),
     While(WhileStatement),

@@ -44,6 +44,52 @@ fn is_ident_part(c: char) -> bool {
     c.is_alphanumeric() || c == '_'
 }
 
+pub(crate) enum StringError {
+    /// The closing `"` is missing.
+    Unterminated,
+    /// A `{` inside the text has no matching `}`.
+    Brace,
+}
+
+/// `chars[start]` is the opening `"`. Returns the index just past the closing one.
+/// `{ ... }` inside the text is an interpolation and may hold strings of its own.
+pub(crate) fn scan_string(chars: &[char], start: usize) -> std::result::Result<usize, StringError> {
+    let mut i = start + 1;
+    loop {
+        match chars.get(i) {
+            None | Some('\n') => return Err(StringError::Unterminated),
+            Some('\\') => i += 2,
+            Some('"') => return Ok(i + 1),
+            Some('{') => i = scan_braces(chars, i)?,
+            Some(_) => i += 1,
+        }
+    }
+}
+
+/// `chars[start]` is a `{`. Returns the index just past the matching `}`.
+pub(crate) fn scan_braces(chars: &[char], start: usize) -> std::result::Result<usize, StringError> {
+    let mut depth = 0;
+    let mut i = start;
+    loop {
+        match chars.get(i) {
+            None | Some('\n') => return Err(StringError::Brace),
+            Some('"') => i = scan_string(chars, i).map_err(|_| StringError::Brace)?,
+            Some('{') => {
+                depth += 1;
+                i += 1;
+            }
+            Some('}') => {
+                depth -= 1;
+                i += 1;
+                if depth == 0 {
+                    return Ok(i);
+                }
+            }
+            Some(_) => i += 1,
+        }
+    }
+}
+
 pub fn lex(src: &str) -> Result<Vec<Token>, ParseError> {
     let chars: Vec<char> = src.chars().collect();
     let mut tokens = Vec::new();
@@ -125,26 +171,22 @@ pub fn lex(src: &str) -> Result<Vec<Token>, ParseError> {
             col += i - begin;
             Tok::Ident(chars[begin..i].iter().collect())
         } else if c == '"' {
-            let begin = i;
-            i += 1;
-            let mut escaped = false;
-            loop {
-                match chars.get(i) {
-                    None | Some('\n') => err!(start_line, start_col, "teks tidak ditutup dengan `\"`"),
-                    Some(&d) => {
-                        i += 1;
-                        if escaped {
-                            escaped = false;
-                        } else if d == '\\' {
-                            escaped = true;
-                        } else if d == '"' {
-                            break;
-                        }
-                    }
+            let end = match scan_string(&chars, i) {
+                Ok(end) => end,
+                Err(StringError::Unterminated) => {
+                    err!(start_line, start_col, "{}", "teks tidak ditutup dengan `\"`")
                 }
-            }
-            col += i - begin;
-            Tok::Str(chars[begin + 1..i - 1].iter().collect())
+                Err(StringError::Brace) => err!(
+                    start_line,
+                    start_col,
+                    "{}",
+                    "tanda `{` di dalam teks tidak ditutup, tulis `\\{` untuk kurung biasa"
+                ),
+            };
+            let raw: String = chars[i + 1..end - 1].iter().collect();
+            col += end - i;
+            i = end;
+            Tok::Str(raw)
         } else {
             let two: String = chars[i..chars.len().min(i + 2)].iter().collect();
             let one = c.to_string();
