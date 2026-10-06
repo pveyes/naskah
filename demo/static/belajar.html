@@ -87,28 +87,28 @@ tulis("Pi kira-kira {pi}")</pre>
 
         <section class="lesson" id="pelajaran-3">
           <h2>3. Berhitung</h2>
-          <p>Komputer pandai berhitung. Tanda <code>+</code> artinya tambah, <code>-</code> kurang, <code>*</code> kali, dan <code>/</code> bagi.</p>
-          <p>Di Tempat Coba, kalau kamu mengetik <code>kali</code> atau <code>bagi</code> di antara dua angka lalu menekan spasi, katanya berubah menjadi tanda <code>×</code> atau <code>÷</code>. Tanda itu sama saja dengan <code>*</code> dan <code>/</code>.</p>
+          <p>Komputer pandai berhitung. Tanda <code>+</code> artinya tambah, <code>-</code> kurang, <code>×</code> kali, dan <code>÷</code> bagi.</p>
+          <p>Tanda <code>×</code> dan <code>÷</code> tidak ada di papan ketik. Caranya: ketik <code>kali</code> atau <code>bagi</code> di antara dua angka, lalu tekan <strong>spasi</strong>. Katanya langsung berubah menjadi tandanya.</p>
           <pre class="naskah">tulis(5 + 3)
 tulis(10 - 4)
-tulis(6 * 7)
-tulis(20 / 4)</pre>
+tulis(6 × 7)
+tulis(20 ÷ 4)</pre>
           <p>Ada dua tanda lagi: <code>%</code> untuk sisa bagi dan <code>^</code> untuk pangkat.</p>
           <pre class="naskah">tulis(17 % 5)
 tulis(2 ^ 10)</pre>
           <p>Komputer mengerjakan kali dan bagi lebih dulu daripada tambah dan kurang, sama seperti di sekolah. Pakai kurung untuk mengubah urutannya.</p>
-          <pre class="naskah">tulis(2 + 3 * 4)
-tulis((2 + 3) * 4)</pre>
+          <pre class="naskah">tulis(2 + 3 × 4)
+tulis((2 + 3) × 4)</pre>
           <p>Kita juga bisa berhitung dengan isi kotak.</p>
           <pre class="naskah">misal panjang = 8
 misal lebar = 5
-misal luas = panjang * lebar
+misal luas = panjang × lebar
 tulis("Luasnya {luas}")</pre>
           <p>Angka desimal memakai koma, dan tulisan bisa disambung dengan <code>+</code>.</p>
-          <pre class="naskah">tulis(10 / 4)
-tulis(7,5 * 2)
+          <pre class="naskah">tulis(10 ÷ 4)
+tulis(7,5 × 2)
 tulis("Tinggiku " + 1,35 + " meter")</pre>
-          <div class="coba" data-contoh="4"><h3>Coba sendiri</h3><ul><li>Hitung luas lingkaran berjari-jari 5: <code>3,14 * 5 * 5</code>.</li><li>Ubah <code>panjang</code> dan <code>lebar</code>, lalu lihat luasnya.</li></ul></div>
+          <div class="coba" data-contoh="4"><h3>Coba sendiri</h3><ul><li>Hitung luas lingkaran berjari-jari 5: <code>3,14 × 5 × 5</code>.</li><li>Ubah <code>panjang</code> dan <code>lebar</code>, lalu lihat luasnya.</li></ul></div>
         </section>
 
         <section class="lesson" id="pelajaran-4">
@@ -184,7 +184,7 @@ jika umur &gt;= 7 {
           <pre class="naskah">misal a = bilangan(tanya("Angka pertama?"))
 misal b = bilangan(tanya("Angka kedua?"))
 tulis("{a} + {b} = {a + b}")
-tulis("{a} x {b} = {a * b}")</pre>
+tulis("{a} × {b} = {a × b}")</pre>
           <div class="coba" data-contoh="1"><h3>Coba sendiri</h3><ul><li>Tanyakan makanan kesukaannya, lalu jawab dengan satu kalimat.</li><li>Tanyakan panjang dan lebar, lalu hitung luasnya.</li></ul></div>
         </section>
 
@@ -196,7 +196,7 @@ tulis("{a} x {b} = {a * b}")</pre>
 }</pre>
           <p>Nilai <code>sampai</code> ikut dihitung, jadi dari 1 sampai 5 ada lima putaran. Mari buat tabel perkalian 7.</p>
           <pre class="naskah">untuk i dari 1 sampai 10 {
-  tulis("7 x {i} = {7 * i}")
+  tulis("7 × {i} = {7 × i}")
 }</pre>
           <p>Cara kedua adalah <code>selama</code>: mengulang selama syaratnya masih benar. Dengan cara ini kamu bisa membuat hitungan sendiri, misalnya menghitung mundur.</p>
           <pre class="naskah">misal angka = 1
@@ -235,7 +235,7 @@ untuk setiap n dalam nilai {
   jumlah = jumlah + n
 }
 tulis("Jumlah: {jumlah}")
-tulis("Rata-rata: {jumlah / nilai.panjang}")</pre>
+tulis("Rata-rata: {jumlah ÷ nilai.panjang}")</pre>
           <div class="coba" data-contoh="3"><h3>Coba sendiri</h3><ul><li>Buat daftar nama teman-temanmu, lalu sapa mereka satu per satu.</li><li>Tambahkan satu nilai lagi ke daftar <code>nilai</code>.</li></ul></div>
         </section>
 
@@ -250,7 +250,7 @@ sapa("Budi")
 sapa("Ani")</pre>
           <p>Di dalam kurung ada bahan yang dibutuhkan perintah itu. Sebuah fungsi juga bisa memberi jawaban dengan <code>hasilkan</code>.</p>
           <pre class="naskah">fungsi luas(panjang, lebar) {
-  hasilkan panjang * lebar
+  hasilkan panjang × lebar
 }
 
 tulis(luas(4, 5))
@@ -359,7 +359,7 @@ tulis("Total: {total}")</pre>
           <p><strong>Tabel perkalian</strong> dari 1 sampai 5.</p>
           <pre class="naskah">untuk a dari 1 sampai 5 {
   untuk b dari 1 sampai 5 {
-    tulis("{a} x {b} = {a * b}")
+    tulis("{a} × {b} = {a × b}")
   }
 }</pre>
           <p><strong>Suara hewan</strong> dengan dua daftar.</p>

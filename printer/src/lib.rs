@@ -167,6 +167,7 @@ mod test {
         assert_eq!(js("x = 6 × 7;"), "x = 6 * 7;\n");
         assert_eq!(js("x = 10 ÷ 4 + 1;"), "x = 10 / 4 + 1;\n");
         assert_eq!(js("x = 1 + 2 × 3;"), "x = 1 + 2 * 3;\n");
+        assert!(transpile_checked("misal a = 2\nmisal b = 3\ntulis(\"{a} × {b} = {a × b}\")").error.is_none());
         // `/` after `saat` means "atau", but `÷` is always a division
         assert_eq!(
             js("pilih x {\nsaat 8 ÷ 2 tulis(\"a\")\n}"),
