@@ -4,6 +4,7 @@
 import init, { compile_program, highlight_html } from "./assets/wasm.js";
 import { readCompiled, runProgram, TIME_LIMIT_MS } from "./runner.js";
 import { addLine, ask } from "./terminal.js";
+import { drawBand } from "./bands.js";
 
 function element(tag, className, text) {
   const node = document.createElement(tag);
@@ -12,20 +13,24 @@ function element(tag, className, text) {
   return node;
 }
 
-function enhance(pre) {
+function enhance(pre, number, several) {
   const code = pre.textContent.replace(/^\n+|\s+$/g, "");
 
   const figure = element("figure", "example");
   const block = element("pre", "code");
   const inner = element("code");
   inner.innerHTML = highlight_html(code);
-  block.appendChild(inner);
+  // bands over the line a printed line came from, drawn above the code
+  const bands = element("div", "line-bands");
+  bands.setAttribute("aria-hidden", "true");
+  block.append(inner, bands);
 
   const run = element("button", "run-button", "Jalankan");
   run.type = "button";
   const edit = element("a", "edit-link", "Ubah di Tempat Coba");
   edit.href = "./#kode=" + encodeURIComponent(code);
   const bar = element("div", "example-bar");
+  if (several) bar.append(element("span", "example-number", "Contoh " + number));
   bar.append(run, edit);
 
   const terminal = element("div", "console example-console");
@@ -37,17 +42,32 @@ function enhance(pre) {
   figure.append(block, bar, terminal);
   pre.replaceWith(figure);
 
+  const showBand = (line) => {
+    bands.replaceChildren();
+    drawBand(bands, inner, block, line);
+  };
+  const hideBand = () => bands.replaceChildren();
+  const printLine = (level, text, line, column) => {
+    const row = addLine(output, level, text, line, column);
+    if (line) {
+      row.addEventListener("mouseenter", () => showBand(line));
+      row.addEventListener("mouseleave", hideBand);
+    }
+    return row;
+  };
+
   let stop = null;
   run.addEventListener("click", () => {
     if (stop) stop();
     stop = null;
     output.replaceChildren();
+    hideBand();
     terminal.hidden = false;
 
     const compiled = readCompiled(compile_program(code));
     if (compiled.error) {
       const { message, line, column } = compiled.error;
-      addLine(output, "error", "Salah tulis: " + message, line, column);
+      printLine("error", "Salah tulis: " + message, line, column);
       return;
     }
 
@@ -55,7 +75,7 @@ function enhance(pre) {
     stop = runProgram(compiled, {
       line(msg) {
         printed += 1;
-        addLine(output, msg.level, msg.text, msg.line);
+        printLine(msg.level, msg.text, msg.line);
       },
       ask(question, reply) {
         printed += 1;
@@ -142,5 +162,21 @@ function paginate() {
 }
 
 await init();
-for (const pre of document.querySelectorAll("pre.naskah")) enhance(pre);
+// Each lesson numbers its examples when it has more than one, and its "Coba sendiri" box
+// says which example to start from, with a link that opens that one in the playground.
+for (const lesson of document.querySelectorAll(".lesson")) {
+  const pres = [...lesson.querySelectorAll("pre.naskah")];
+  const codes = pres.map((pre) => pre.textContent.replace(/^\n+|\s+$/g, ""));
+  pres.forEach((pre, i) => enhance(pre, i + 1, pres.length > 1));
+
+  const box = lesson.querySelector(".coba");
+  const start = box ? codes[Number(box.dataset.contoh) - 1] : undefined;
+  if (start === undefined) continue;
+  const several = pres.length > 1;
+  const link = element("a", "edit-link", several ? "Mulai dari contoh " + box.dataset.contoh + " di Tempat Coba" : "Mulai di Tempat Coba");
+  link.href = "./#kode=" + encodeURIComponent(start);
+  const where = element("p", "coba-start");
+  where.append(link);
+  box.appendChild(where);
+}
 paginate();

@@ -221,6 +221,7 @@ body.belajar .hero p {
 }
 
 .example .code {
+  position: relative;
   margin: 0;
   padding: 18px 20px;
   overflow-x: auto;
@@ -276,6 +277,21 @@ body.belajar .hero p {
 
 .edit-link:hover {
   color: var(--ink);
+}
+
+.example-number {
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.coba-start {
+  margin: 10px 0 0;
+}
+
+.coba-start .edit-link {
+  color: var(--ink);
+  font-size: 1rem;
 }
 
 .example .console {

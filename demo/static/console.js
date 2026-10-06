@@ -5,6 +5,7 @@
 import { parseMap, runProgram, TIME_LIMIT_MS } from "./runner.js";
 import { addLine as addTerminalLine, ask } from "./terminal.js";
 import { setupExamples } from "./contoh.js";
+import { drawBand, rangeRects } from "./bands.js";
 
 const DEBOUNCE_MS = 300;
 
@@ -37,66 +38,12 @@ function addLine(level, text, sourceLine, column) {
 // instead of inside it.
 const bands = document.getElementById("line-bands");
 
-/** Client rects (one per visual row) covering `lineNumber` of `root`'s text. */
-function lineRows(root, lineNumber) {
-  const lines = root.textContent.split("\n");
-  if (lineNumber < 1 || lineNumber > lines.length) return [];
-
-  let start = 0;
-  for (let i = 0; i < lineNumber - 1; i++) start += lines[i].length + 1;
-  return rangeRects(root, start, start + lines[lineNumber - 1].length);
-}
-
-/** Client rects (one per visual row) covering characters `start` to `end` of `root`'s text. */
-function rangeRects(root, start, end) {
-  if (end <= start) return [];
-
-  const range = document.createRange();
-  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
-  let position = 0;
-  let started = false;
-  for (let node = walker.nextNode(); node; node = walker.nextNode()) {
-    const length = node.nodeValue.length;
-    if (!started && start < position + length) {
-      range.setStart(node, start - position);
-      started = true;
-    }
-    if (started && end <= position + length) {
-      range.setEnd(node, end - position);
-      break;
-    }
-    position += length;
-  }
-
-  // a line made of several spans yields several rects per row; keep one per row
-  const rows = new Map();
-  for (const rect of range.getClientRects()) {
-    const key = Math.round(rect.top);
-    if (!rows.has(key)) rows.set(key, rect);
-  }
-  return [...rows.values()];
-}
-
 function showBand(naskahLine) {
   hideBand();
   const backdrop = document.querySelector("#playground .backdrop");
   const editor = backdrop?.closest(".editor");
   if (!backdrop || !editor) return;
-
-  const origin = bands.getBoundingClientRect();
-  const box = editor.getBoundingClientRect();
-  const lineHeight = parseFloat(getComputedStyle(backdrop).lineHeight);
-
-  for (const rect of lineRows(backdrop, naskahLine)) {
-    const height = Number.isFinite(lineHeight) ? lineHeight : rect.height;
-    const band = document.createElement("div");
-    band.className = "line-band";
-    band.style.top = rect.top + rect.height / 2 - height / 2 - origin.top + "px";
-    band.style.left = box.left - origin.left + "px";
-    band.style.width = box.width + "px";
-    band.style.height = height + "px";
-    bands.appendChild(band);
-  }
+  drawBand(bands, backdrop, editor, naskahLine);
 }
 
 function hideBand() {
