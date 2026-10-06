@@ -1,0 +1,16 @@
+{
+  "name": "naskah-demo",
+  "private": true,
+  "type": "module",
+  "description": "The Naskah playground, deployed to Cloudflare Workers with the cf CLI",
+  "scripts": {
+    "dev": "cf dev",
+    "build": "cf build",
+    "deploy": "cf deploy"
+  },
+  "devDependencies": {
+    "@cloudflare/vite-plugin": "beta",
+    "cf": "^1.0.0-beta.12",
+    "vite": "^8.3.0"
+  }
+}

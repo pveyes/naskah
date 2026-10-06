@@ -7,3 +7,6 @@ demo/static/main.js
 demo/static/main.wasm
 
 demo/static/assets/
+demo/static/node_modules/
+.cloudflare/
+.wrangler/

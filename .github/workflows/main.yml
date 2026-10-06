@@ -14,28 +14,40 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Run tests
         run: cargo test --workspace --verbose
 
   demo:
+    needs: test
     runs-on: ubuntu-latest
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
     steps:
-      - uses: actions/checkout@v4
-      - name: Build
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: demo/static/package-lock.json
+      - name: Build the wasm demo
         run: ./scripts/build-demo.sh
-      - name: Upload preview version
-        uses: cloudflare/wrangler-action@v3
-        if: github.event_name == 'pull_request'
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: versions upload
-      - name: Deploy production
-        uses: cloudflare/wrangler-action@v3
+      - name: Install the cf CLI
+        working-directory: demo/static
+        run: npm ci --no-audit --no-fund
+      # Builds the site and checks the deploy without uploading, so it also runs
+      # for pull requests that cannot see the Cloudflare secrets.
+      - name: Check the deploy
+        working-directory: demo/static
+        run: npx --no-install cf deploy --dry-run
+      - name: Deploy to Cloudflare
         if: github.event_name == 'push'
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: deploy
+        working-directory: demo/static
+        run: |
+          if [ -z "$CLOUDFLARE_API_TOKEN" ] || [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then
+            echo "::error::Add the CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID repository secrets so pushes to master can deploy."
+            exit 1
+          fi
+          npx --no-install cf deploy
