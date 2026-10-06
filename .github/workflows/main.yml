@@ -15,6 +15,7 @@ jobs:
 
     steps:
       - uses: actions/checkout@v5
+      - uses: Swatinem/rust-cache@v2
       - name: Run tests
         run: cargo test --workspace --verbose
 
@@ -29,6 +30,9 @@ jobs:
           node-version: 22
           cache: npm
           cache-dependency-path: demo/static/package-lock.json
+      - uses: Swatinem/rust-cache@v2
+      # A prebuilt wasm-pack, so build-demo.sh does not compile it from source.
+      - uses: jetli/wasm-pack-action@v0.4.0
       - name: Build the wasm demo
         run: ./scripts/build-demo.sh
       - name: Install the cf CLI
@@ -42,6 +46,13 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      - name: Keep the wasm build for the deploy
+        if: github.event_name == 'push'
+        uses: actions/upload-artifact@v4
+        with:
+          name: wasm
+          path: demo/static/assets
+          retention-days: 1
 
   # A separate job so that only pushes to master show up under "Deployments".
   deploy:
@@ -62,8 +73,10 @@ jobs:
           node-version: 22
           cache: npm
           cache-dependency-path: demo/static/package-lock.json
-      - name: Build the wasm demo
-        run: ./scripts/build-demo.sh
+      - uses: actions/download-artifact@v4
+        with:
+          name: wasm
+          path: demo/static/assets
       - name: Install the cf CLI
         working-directory: demo/static
         run: npm ci --no-audit --no-fund
