@@ -2,7 +2,7 @@
 
 > Bahasa pemrograman dengan sintaks Bahasa Indonesia
 
-Naskah ditulis dalam Bahasa Indonesia dan diterjemahkan ke JavaScript. Coba langsung di browser: **https://naskah.fatihkalifa.workers.dev**
+Naskah ditulis dalam Bahasa Indonesia dan diterjemahkan ke JavaScript. Coba langsung di browser: **https://naskah.dev**
 
 ## Sekilas
 
@@ -51,7 +51,7 @@ cargo test --workspace   # jalankan test
 
 ## Penerapan
 
-Demo diterapkan ke Cloudflare Workers dengan CLI [`cf`](https://www.npmjs.com/package/cf). Proyeknya ada di `demo/static`: Vite menyusun situsnya dan `cf deploy` mengunggahnya sebagai Worker bernama `naskah`, yang tersedia di `naskah.<subdomain-akun>.workers.dev` (saat ini `naskah.fatihkalifa.workers.dev`).
+Demo diterapkan ke Cloudflare Workers dengan CLI [`cf`](https://www.npmjs.com/package/cf). Proyeknya ada di `demo/static`: Vite menyusun situsnya dan `cf deploy` mengunggahnya sebagai Worker bernama `naskah`, yang tersedia di domain khusus `naskah.dev`.
 
 ```sh
 cf auth login            # sekali saja
