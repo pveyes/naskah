@@ -6,80 +6,90 @@ Demo: https://naskah.vercel.app/
 
 ## Tipe data
 
-Saat ini hanya 4 tipe data yang didukung oleh naskah:
-
-- angka `123`
-- huruf `"hello"`
+- angka `123`, `1.5`, `0xff`, `0b101`
+- teks `"halo"`
 - boolean `benar` / `salah`
 - kosong `kosong`
 
 ## Operator
 
-Operasi yang didukung oleh `naskah` adalah:
+Dari yang paling lemah ke paling kuat:
 
-- Penjumlahan `+`
-- Pengurangan `-`
-- Perkalian `*`
-- Pembagian `\`
-- Sisa pembagian `%`
-- Pangkat `^`
+| Operator | Arti |
+|---|---|
+| `=` | isi ulang variabel |
+| `atau` | atau |
+| `dan` | dan |
+| `bukan` | bukan |
+| `==` `!=` | sama / tidak sama |
+| `>` `<` `>=` `<=` | perbandingan |
+| `+` `-` | tambah, kurang |
+| `*` `/` `%` | kali, bagi, sisa bagi |
+| `-x` | negatif |
+| `^` | pangkat |
 
-Selain itu ada juga operasi untuk membandingkan dua variabel / tipe data
-
-- Sama dengan `==`
-- Tidak sama dengan `!=`
-- Lebih dari `>`
-- Kurang dari `<`
+Gunakan tanda kurung `( )` untuk mengubah urutan. Komentar diawali `//`.
 
 ## Sintaks
 
-### Deklarasi variabel
+### Variabel
 
 ```
 misal x = 4;
-misal y = x;
+konstan pi = 3.14;
+x = x + 1;
 ```
 
 ### Percabangan
 
 ```
 jika x == 2 {
-
-}
-
-jika x == kosong {
-
-}
-```
-
-Untuk kasus-kasus umum, naskah menyediakan sintaks khusus untuk pengecekan terhadap `kosong`, `benar` dan `salah`. Tidak perlu menulis operator `==`, cukup `x kosong`.
-
-```
-jika x kosong {
-
+  tulis("dua");
+} lain jika x > 2 dan bukan x == 10 {
+  tulis("lebih dari dua");
+} lain {
+  tulis("kurang dari dua");
 }
 ```
+
+Untuk mengecek `kosong`, `benar` dan `salah` ada singkatan: `jika x kosong {` sama dengan `jika x == kosong {`.
 
 ### Perulangan
 
-Naskah saat ini hanya mempunyai 1 tipe perulangan yang tidak pernah berhenti
-
 ```
-ulang {
-
+selama x < 10 {
+  x = x + 1;
 }
-```
 
-Untuk berhenti di dalam perulangan, dapat menggunakan sintaks `berhenti;`
-
-```
+// tanpa kondisi, berhenti dengan `berhenti;`
 ulang {
-  jika x > 2 {
+  jika x > 20 {
     berhenti;
   }
+  x = x + 1;
+  lanjut;
 }
 ```
 
-## Lisensi
+### Fungsi
 
-Bahasa pemrograman Naskah terlisensi dibawah lisensi MIT.
+```
+fungsi jumlah(a, b) {
+  kembali a + b;
+}
+
+tulis(jumlah(1, 2));
+```
+
+`tulis` menjadi `console.log` dan `tanya` menjadi `prompt`.
+
+### Kesalahan sintaks
+
+Kesalahan dilaporkan dengan posisinya, misalnya `baris 1, kolom 11: ekspresi tidak lengkap, ditemukan `;``.
+
+## Pengembangan
+
+```sh
+cargo test --workspace   # jalankan test
+./scripts/dev.sh         # build demo dan jalankan di http://localhost:8787
+```
