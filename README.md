@@ -10,6 +10,8 @@ Demo: https://naskah.vercel.app/
 - teks `"halo"`
 - boolean `benar` / `salah`
 - kosong `kosong`
+- daftar `[1, 2, 3]`
+- objek `{ nama: "Budi", umur: 3 }`
 
 ## Operator
 
@@ -27,6 +29,7 @@ Dari yang paling lemah ke paling kuat:
 | `*` `/` `%` | kali, bagi, sisa bagi |
 | `-x` | negatif |
 | `^` | pangkat |
+| `a.b` `a[0]` `f(x)` | properti, elemen, panggil fungsi |
 
 Gunakan tanda kurung `( )` untuk mengubah urutan. Komentar diawali `//`.
 
@@ -70,6 +73,58 @@ ulang {
   lanjut;
 }
 ```
+
+Perulangan dengan hitungan. Batas `sampai` ikut dihitung. Beri `langkah` negatif untuk menghitung mundur.
+
+```
+untuk i dari 1 sampai 10 {
+  tulis(i);
+}
+
+untuk i dari 10 sampai 0 langkah -2 {
+  tulis(i);
+}
+```
+
+Perulangan untuk setiap isi daftar:
+
+```
+untuk setiap barang dalam belanja {
+  tulis(barang);
+}
+```
+
+### Pilihan
+
+```
+pilih x {
+  kalau 1, 2 {
+    tulis("satu atau dua");
+  }
+  kalau 3 {
+    tulis("tiga");
+  }
+  lain {
+    tulis("lainnya");
+  }
+}
+```
+
+Setiap `kalau` berdiri sendiri, tidak lanjut ke `kalau` di bawahnya. `berhenti;` dan `lanjut;` di dalam `kalau` berlaku untuk perulangan di sekitarnya.
+
+### Daftar dan objek
+
+```
+misal belanja = ["beras", "telur"];
+belanja.tambah("gula");
+belanja[0] = "ketan";
+tulis(belanja.panjang);
+
+misal orang = { nama: "Budi", umur: 3 };
+orang.umur = orang.umur + 1;
+```
+
+Nama lain untuk daftar: `panjang` (`length`), `tambah` (`push`), `gabung` (`join`), `balik` (`reverse`). Nama ini diterjemahkan di mana pun dipakai, termasuk sebagai nama properti objek.
 
 ### Fungsi
 

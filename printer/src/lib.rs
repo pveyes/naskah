@@ -97,4 +97,79 @@ mod test {
             "// Salah sintaks di baris 1, kolom 11: ekspresi tidak lengkap, ditemukan `;`"
         );
     }
+
+    #[test]
+    fn lists_objects_and_members() {
+        assert_eq!(
+            js("misal o = { nama: \"Budi\", panjang: 3, \"a b\": [1, 2] };"),
+            "let o = { nama: \"Budi\", length: 3, \"a b\": [1, 2] };\n"
+        );
+        assert_eq!(js("x = [] == {};"), "x = [] === {};\n");
+        assert_eq!(
+            js("x = daftar.panjang + daftar[0];"),
+            "x = daftar.length + daftar[0];\n"
+        );
+        assert_eq!(js("daftar.tambah(4);"), "daftar.push(4);\n");
+        assert_eq!(js("x = daftar.gabung(\", \").balik();"), "x = daftar.join(\", \").reverse();\n");
+        assert_eq!(js("a[0] = b.c = a[1];"), "a[0] = b.c = a[1];\n");
+        assert_eq!(js("f(1)(2);"), "f(1)(2);\n");
+    }
+
+    #[test]
+    fn member_operands_get_parentheses() {
+        assert_eq!(js("x = (a + b).panjang;"), "x = (a + b).length;\n");
+        assert_eq!(js("x = (5).foo;"), "x = (5).foo;\n");
+        assert_eq!(js("x = (-a)[0];"), "x = (-a)[0];\n");
+        // a statement starting with `{` would be parsed as a block by JS
+        assert_eq!(js("({ a: 1 }).a;"), "({ a: 1 }.a);\n");
+    }
+
+    #[test]
+    fn for_loops() {
+        assert_eq!(
+            js("untuk i dari 1 sampai 3 {\ntulis(i);\n}"),
+            "for (let i = 1; i <= 3; i++) {\n  console.log(i);\n}\n"
+        );
+        assert_eq!(
+            js("untuk i dari 10 sampai 0 langkah -2 {\n}"),
+            "for (let i = 10; i >= 0; i += -2) {\n}\n"
+        );
+        assert_eq!(
+            js("untuk i dari 0 sampai 9 langkah 3 {\n}"),
+            "for (let i = 0; i <= 9; i += 3) {\n}\n"
+        );
+        assert_eq!(
+            js("untuk setiap x dalam [1, 2] {\nlanjut;\n}"),
+            "for (let x of [1, 2]) {\n  continue;\n}\n"
+        );
+    }
+
+    #[test]
+    fn switch_is_an_if_chain() {
+        assert_eq!(
+            js("pilih x {\nkalau 1, 2 {\ntulis(\"a\");\n}\nkalau 3 {\n}\nlain {\nberhenti;\n}\n}"),
+            "if (x === 1 || x === 2) {\n  console.log(\"a\");\n} else if (x === 3) {\n} else {\n  break;\n}\n"
+        );
+    }
+
+    #[test]
+    fn switch_on_an_expression_evaluates_it_once() {
+        assert_eq!(
+            js("pilih f() {\nkalau 1 {\n}\n}"),
+            "{\n  const _pilih0 = f();\n  if (_pilih0 === 1) {\n  }\n}\n"
+        );
+        // nested switches get distinct names
+        assert_eq!(
+            js("pilih f() {\nkalau 1 {\npilih g() {\nkalau 2 {\n}\n}\n}\n}"),
+            "{\n  const _pilih0 = f();\n  if (_pilih0 === 1) {\n    {\n      const _pilih2 = g();\n      if (_pilih2 === 2) {\n      }\n    }\n  }\n}\n"
+        );
+    }
+
+    #[test]
+    fn bare_block_is_indented() {
+        assert_eq!(
+            js("jika x {\n{\nlanjut;\n}\n}"),
+            "if (x) {\n  {\n    continue;\n  }\n}\n"
+        );
+    }
 }

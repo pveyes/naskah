@@ -38,11 +38,12 @@ impl Lang {
         match self {
             Lang::Naskah => &[
                 "misal", "konstan", "jika", "lain", "selama", "ulang", "berhenti", "lanjut",
-                "fungsi", "hasilkan", "dan", "atau", "bukan",
+                "fungsi", "hasilkan", "dan", "atau", "bukan", "untuk", "setiap", "dari", "sampai",
+                "langkah", "dalam", "pilih", "kalau",
             ],
             Lang::JavaScript => &[
                 "var", "let", "const", "if", "else", "for", "while", "break", "continue",
-                "function", "return",
+                "function", "return", "of",
             ],
         }
     }
@@ -184,6 +185,10 @@ mod test {
     fn new_keywords() {
         let toks = tokenize(Lang::Naskah, "fungsi f() { hasilkan a dan bukan b; }");
         for word in &["fungsi", "hasilkan", "dan", "bukan"] {
+            assert!(toks.contains(&(Kind::Keyword, *word)), "{}", word);
+        }
+        let toks = tokenize(Lang::Naskah, "untuk setiap x dalam y { } pilih z { kalau 1 { } lain { } }");
+        for word in &["untuk", "setiap", "dalam", "pilih", "kalau", "lain"] {
             assert!(toks.contains(&(Kind::Keyword, *word)), "{}", word);
         }
     }

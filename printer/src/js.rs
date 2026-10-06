@@ -145,17 +145,70 @@ fn builtin(name: &str) -> &str {
     }
 }
 
+/// Property and method names, applied to `a.name` and to `{ name: ... }` alike
+/// so a name means the same thing wherever it is used.
+fn property_name(name: &str) -> &str {
+    match name {
+        "panjang" => "length",
+        "tambah" => "push",
+        "gabung" => "join",
+        "balik" => "reverse",
+        other => other,
+    }
+}
+
 fn print_call_expression(c: CallExpression) -> String {
+    let callee = match *c.callee {
+        Expression::Identifier(i) => builtin(&i.name).to_string(),
+        other => {
+            let parens = precedence(&other) < PREC_ATOM;
+            print_operand(other, parens)
+        }
+    };
     let arguments: Vec<String> = c.arguments.into_iter().map(print_expression).collect();
-    format!("{}({})", builtin(&c.callee.name), arguments.join(", "))
+    format!("{}({})", callee, arguments.join(", "))
+}
+
+/// An operand of `.name`, `[i]`: `(a + b).x` and `(5).x` need their parentheses.
+fn print_object_operand(e: Expression) -> String {
+    let parens = precedence(&e) < PREC_ATOM || matches!(e, Expression::Literal(Literal::Number(_)));
+    print_operand(e, parens)
+}
+
+fn print_member_expression(m: Box<MemberExpression>) -> String {
+    let m = *m;
+    format!("{}.{}", print_object_operand(m.object), property_name(&m.property))
+}
+
+fn print_index_expression(i: Box<IndexExpression>) -> String {
+    let i = *i;
+    format!("{}[{}]", print_object_operand(i.object), print_expression(i.index))
+}
+
+fn print_list(items: Vec<Expression>) -> String {
+    let items: Vec<String> = items.into_iter().map(print_expression).collect();
+    format!("[{}]", items.join(", "))
+}
+
+fn print_object(properties: Vec<Property>) -> String {
+    if properties.is_empty() {
+        return String::from("{}");
+    }
+    let properties: Vec<String> = properties
+        .into_iter()
+        .map(|p| {
+            let key = match p.key {
+                PropertyKey::Name(name) => property_name(&name).to_string(),
+                PropertyKey::Text(text) => format!("\"{}\"", text),
+            };
+            format!("{}: {}", key, print_expression(p.value))
+        })
+        .collect();
+    format!("{{ {} }}", properties.join(", "))
 }
 
 fn print_assignment_expression(s: AssignmentExpression) -> String {
-    let mut res = String::new();
-    res.push_str(&print_identifier(s.id));
-    res.push_str(" = ");
-    res.push_str(&print_expression(*s.value));
-    res
+    format!("{} = {}", print_expression(*s.target), print_expression(*s.value))
 }
 
 fn print_expression(e: Expression) -> String {
@@ -166,6 +219,10 @@ fn print_expression(e: Expression) -> String {
         Expression::UnaryExpression(u) => print_unary_expression(u),
         Expression::CallExpression(c) => print_call_expression(c),
         Expression::Identifier(i) => print_identifier(i),
+        Expression::Member(m) => print_member_expression(m),
+        Expression::Index(i) => print_index_expression(i),
+        Expression::List(items) => print_list(items),
+        Expression::Object(properties) => print_object(properties),
     }
 }
 
@@ -250,6 +307,96 @@ fn print_while_statement(w: WhileStatement, depth: u8) -> String {
     res
 }
 
+fn print_for_range_statement(f: ForRangeStatement, depth: u8) -> String {
+    let descending = match &f.step {
+        Some(Expression::UnaryExpression(u)) => u.operator == UnaryOperator::Negate,
+        _ => false,
+    };
+    let var = f.var.name;
+    let update = match f.step {
+        Some(step) => format!("{} += {}", var, print_expression(step)),
+        None => format!("{}++", var),
+    };
+    format!(
+        "{}for (let {} = {}; {} {} {}; {}) {}",
+        insert_indent(depth),
+        var,
+        print_expression(f.from),
+        var,
+        if descending { ">=" } else { "<=" },
+        print_expression(f.to),
+        update,
+        print_block_statement(f.body, depth)
+    )
+}
+
+fn print_for_each_statement(f: ForEachStatement, depth: u8) -> String {
+    format!(
+        "{}for (let {} of {}) {}",
+        insert_indent(depth),
+        f.var.name,
+        print_expression(f.iterable),
+        print_block_statement(f.body, depth)
+    )
+}
+
+/// `pilih` becomes an if/else chain rather than a JS `switch`, so `berhenti;`
+/// and `lanjut;` inside a `kalau` still apply to the loop around it.
+fn print_switch_statement(s: SwitchStatement, depth: u8) -> String {
+    let (temp, subject) = match s.discriminant {
+        Expression::Identifier(i) => (None, Expression::Identifier(i)),
+        other => {
+            let name = Identifier { name: format!("_pilih{}", depth) };
+            (Some((name.clone(), other)), Expression::Identifier(name))
+        }
+    };
+
+    let mut alternate = s.default.map(AlternateStatement::BlockStatement);
+    for case in s.cases.into_iter().rev() {
+        let mut matches = case.tests.into_iter().map(|t| {
+            Expression::BinaryExpression(Box::new(BinaryExpression {
+                left: subject.clone(),
+                right: t,
+                operator: Operator::Equal,
+            }))
+        });
+        let first = matches.next().unwrap();
+        let test = matches.fold(first, |left, right| {
+            Expression::BinaryExpression(Box::new(BinaryExpression {
+                left,
+                right,
+                operator: Operator::Or,
+            }))
+        });
+        alternate = Some(AlternateStatement::IfStatement(Box::new(IfStatement {
+            test,
+            consequent: case.body,
+            alternate,
+        })));
+    }
+    let chain = match alternate {
+        Some(AlternateStatement::IfStatement(i)) => *i,
+        _ => unreachable!("the parser requires at least one kalau"),
+    };
+
+    match temp {
+        None => print_if_statement(chain, depth, false),
+        Some((name, value)) => {
+            let wrapper = BlockStatement {
+                body: Some(vec![
+                    Statement::VariableDeclaration(VariableDeclaration {
+                        kind: VariableKind::Const,
+                        id: name,
+                        value,
+                    }),
+                    Statement::IfStatement(chain),
+                ]),
+            };
+            insert_indent(depth) + &print_block_statement(wrapper, depth)
+        }
+    }
+}
+
 fn print_function_declaration(f: FunctionDeclaration, depth: u8) -> String {
     let params: Vec<String> = f.params.into_iter().map(print_identifier).collect();
     let mut res = insert_indent(depth);
@@ -275,15 +422,24 @@ fn print_statement(s: Statement, depth: u8) -> String {
         Statement::Expression(e) => {
             let mut res = String::new();
             res.push_str(&insert_indent(depth));
-            res.push_str(&print_expression(e));
+            let printed = print_expression(e);
+            if printed.starts_with('{') {
+                // an object literal here would be read as a block
+                res.push_str(&format!("({})", printed));
+            } else {
+                res.push_str(&printed);
+            }
             res.push_str(";");
             res
         }
         Statement::VariableDeclaration(v) => print_variable_declaration(v, depth),
-        Statement::BlockStatement(s) => print_block_statement(s, depth),
+        Statement::BlockStatement(s) => insert_indent(depth) + &print_block_statement(s, depth),
         Statement::IfStatement(s) => print_if_statement(s, depth, false),
         Statement::Loop(s) => print_loop_statement(s, depth),
         Statement::While(s) => print_while_statement(s, depth),
+        Statement::ForRange(s) => print_for_range_statement(s, depth),
+        Statement::ForEach(s) => print_for_each_statement(s, depth),
+        Statement::Switch(s) => print_switch_statement(s, depth),
         Statement::FunctionDeclaration(f) => print_function_declaration(f, depth),
         Statement::Return(e) => print_return_statement(e, depth),
         Statement::Break => insert_indent(depth) + &String::from("break;"),

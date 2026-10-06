@@ -23,20 +23,26 @@ enum Msg {
     ChangeCode(String),
 }
 
-const EXAMPLE_CODE: &str = "// Hitung faktorial
-fungsi faktorial(n) {
-  jika n <= 1 {
-    hasilkan 1;
-  }
-  hasilkan n * faktorial(n - 1);
+const EXAMPLE_CODE: &str = "// Daftar belanja
+misal belanja = [
+  { nama: \"beras\", harga: 12 },
+  { nama: \"telur\", harga: 28 },
+];
+
+misal total = 0;
+untuk setiap barang dalam belanja {
+  total = total + barang.harga;
+  tulis(barang.nama, barang.harga);
 }
 
-misal hasil = faktorial(5);
-jika hasil > 100 dan bukan hasil == 0 {
-  tulis(\"besar:\", hasil);
-} lain {
-  tulis(\"kecil:\", hasil);
+fungsi golongan(jumlah) {
+  pilih jumlah {
+    kalau 0 { hasilkan \"kosong\"; }
+    lain { hasilkan \"ada isi\"; }
+  }
 }
+
+tulis(golongan(belanja.panjang), total);
 ";
 
 fn highlighted(lang: Lang, src: &str) -> Html {

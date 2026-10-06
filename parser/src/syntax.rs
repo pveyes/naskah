@@ -3,9 +3,11 @@ use super::lexer::{lex, ParseError, Tok, Token};
 
 type Result<T> = std::result::Result<T, ParseError>;
 
-const RESERVED: [&str; 16] = [
-    "misal", "konstan", "jika", "lain", "selama", "ulang", "berhenti", "lanjut", "fungsi",
-    "hasilkan", "benar", "salah", "kosong", "dan", "atau", "bukan",
+// `setiap`, `dari`, `sampai`, `langkah` and `dalam` are only special inside
+// `untuk`, so they stay usable as names.
+const RESERVED: [&str; 19] = [
+    "misal", "konstan", "jika", "lain", "selama", "ulang", "untuk", "pilih", "kalau", "berhenti",
+    "lanjut", "fungsi", "hasilkan", "benar", "salah", "kosong", "dan", "atau", "bukan",
 ];
 
 struct Parser {
@@ -26,11 +28,6 @@ fn describe(tok: &Tok) -> String {
 impl Parser {
     fn peek(&self) -> &Tok {
         &self.tokens[self.pos].tok
-    }
-
-    fn peek_at(&self, n: usize) -> &Tok {
-        let i = (self.pos + n).min(self.tokens.len() - 1);
-        &self.tokens[i].tok
     }
 
     fn advance(&mut self) {
@@ -166,6 +163,14 @@ impl Parser {
             return Ok(Statement::Loop(self.block()?));
         }
 
+        if self.eat_word("untuk") {
+            return self.for_statement();
+        }
+
+        if self.eat_word("pilih") {
+            return self.switch_statement();
+        }
+
         if self.eat_word("berhenti") {
             self.expect_punct(";")?;
             return Ok(Statement::Break);
@@ -185,6 +190,65 @@ impl Parser {
         let e = self.expression()?;
         self.expect_punct(";")?;
         Ok(Statement::Expression(e))
+    }
+
+    fn expect_word(&mut self, w: &str) -> Result<()> {
+        if self.eat_word(w) {
+            Ok(())
+        } else {
+            self.error(format!("diharapkan `{}`, ditemukan {}", w, describe(self.peek())))
+        }
+    }
+
+    fn for_statement(&mut self) -> Result<Statement> {
+        if self.eat_word("setiap") {
+            let var = self.identifier()?;
+            self.expect_word("dalam")?;
+            let iterable = self.expression()?;
+            let body = self.block()?;
+            return Ok(Statement::ForEach(ForEachStatement { var, iterable, body }));
+        }
+
+        let var = self.identifier()?;
+        self.expect_word("dari")?;
+        let from = self.expression()?;
+        self.expect_word("sampai")?;
+        let to = self.expression()?;
+        let step = if self.eat_word("langkah") { Some(self.expression()?) } else { None };
+        let body = self.block()?;
+        Ok(Statement::ForRange(ForRangeStatement { var, from, to, step, body }))
+    }
+
+    fn switch_statement(&mut self) -> Result<Statement> {
+        let discriminant = self.expression()?;
+        self.expect_punct("{")?;
+
+        let mut cases = Vec::new();
+        let mut default = None;
+        loop {
+            if self.eat_word("kalau") {
+                let mut tests = vec![self.expression()?];
+                while self.eat_punct(",") {
+                    tests.push(self.expression()?);
+                }
+                let body = self.block()?;
+                cases.push(SwitchCase { tests, body });
+            } else if self.eat_word("lain") {
+                default = Some(self.block()?);
+                break;
+            } else {
+                break;
+            }
+        }
+
+        if cases.is_empty() {
+            return self.error(format!(
+                "`pilih` membutuhkan minimal satu `kalau`, ditemukan {}",
+                describe(self.peek())
+            ));
+        }
+        self.expect_punct("}")?;
+        Ok(Statement::Switch(SwitchStatement { discriminant, cases, default }))
     }
 
     fn if_statement(&mut self) -> Result<IfStatement> {
@@ -219,18 +283,24 @@ impl Parser {
     //   =  <  atau  <  dan  <  bukan  <  == !=  <  < > <= >=  <  + -  <  * / %  <  - (unary)  <  ^
 
     fn expression(&mut self) -> Result<Expression> {
-        if let (Tok::Ident(name), Tok::Punct("=")) = (self.peek().clone(), self.peek_at(1).clone()) {
-            if !RESERVED.contains(&name.as_str()) {
-                self.advance();
-                self.advance();
-                let value = self.expression()?;
-                return Ok(Expression::Assignment(AssignmentExpression {
-                    id: Identifier { name },
-                    value: Box::new(value),
-                }));
+        let left = self.or()?;
+        if !self.is_punct("=") {
+            return Ok(left);
+        }
+        match left {
+            Expression::Identifier(_) | Expression::Member(_) | Expression::Index(_) => {}
+            _ => {
+                return self.error(String::from(
+                    "sebelah kiri `=` harus berupa variabel, properti, atau elemen daftar",
+                ))
             }
         }
-        self.or()
+        self.advance();
+        let value = self.expression()?;
+        Ok(Expression::Assignment(AssignmentExpression {
+            target: Box::new(left),
+            value: Box::new(value),
+        }))
     }
 
     fn or(&mut self) -> Result<Expression> {
@@ -334,13 +404,85 @@ impl Parser {
     }
 
     fn power(&mut self) -> Result<Expression> {
-        let base = self.primary()?;
+        let base = self.postfix()?;
         if self.eat_punct("^") {
             // right associative, and the exponent may be negated: 2 ^ -1
             let exponent = self.unary()?;
             return Ok(binary(base, Operator::Exponentiation, exponent));
         }
         Ok(base)
+    }
+
+    /// `.name`, `[index]` and `(arguments)` after an expression.
+    fn postfix(&mut self) -> Result<Expression> {
+        let mut e = self.primary()?;
+        loop {
+            if self.eat_punct(".") {
+                match self.peek().clone() {
+                    Tok::Ident(property) => {
+                        self.advance();
+                        e = Expression::Member(Box::new(MemberExpression { object: e, property }));
+                    }
+                    other => {
+                        return self.error(format!(
+                            "diharapkan nama properti, ditemukan {}",
+                            describe(&other)
+                        ))
+                    }
+                }
+            } else if self.eat_punct("[") {
+                let index = self.expression()?;
+                self.expect_punct("]")?;
+                e = Expression::Index(Box::new(IndexExpression { object: e, index }));
+            } else if self.is_punct("(") {
+                match e {
+                    Expression::Identifier(_)
+                    | Expression::Member(_)
+                    | Expression::Index(_)
+                    | Expression::CallExpression(_) => {}
+                    _ => return self.error(String::from("ini bukan fungsi dan tidak bisa dipanggil")),
+                }
+                self.advance();
+                let arguments = self.comma_separated(")", Parser::expression)?;
+                e = Expression::CallExpression(CallExpression { callee: Box::new(e), arguments });
+            } else {
+                return Ok(e);
+            }
+        }
+    }
+
+    /// Items separated by `,` up to and including `close`. A trailing comma is fine.
+    fn comma_separated<T>(
+        &mut self,
+        close: &str,
+        item: fn(&mut Parser) -> Result<T>,
+    ) -> Result<Vec<T>> {
+        let mut items = Vec::new();
+        while !self.is_punct(close) {
+            items.push(item(self)?);
+            if !self.eat_punct(",") {
+                break;
+            }
+        }
+        self.expect_punct(close)?;
+        Ok(items)
+    }
+
+    fn property(&mut self) -> Result<Property> {
+        let key = match self.peek().clone() {
+            Tok::Ident(name) => PropertyKey::Name(name),
+            Tok::Str(text) => PropertyKey::Text(text),
+            other => {
+                return self.error(format!(
+                    "diharapkan nama properti, ditemukan {}",
+                    describe(&other)
+                ))
+            }
+        };
+        self.advance();
+        self.expect_punct(":")?;
+        let value = self.expression()?;
+        Ok(Property { key, value })
     }
 
     fn primary(&mut self) -> Result<Expression> {
@@ -359,6 +501,14 @@ impl Parser {
                 self.expect_punct(")")?;
                 Ok(e)
             }
+            Tok::Punct("[") => {
+                self.advance();
+                Ok(Expression::List(self.comma_separated("]", Parser::expression)?))
+            }
+            Tok::Punct("{") => {
+                self.advance();
+                Ok(Expression::Object(self.comma_separated("}", Parser::property)?))
+            }
             Tok::Ident(word) if word == "benar" || word == "salah" => {
                 self.advance();
                 Ok(Expression::Literal(Literal::Boolean(word == "benar")))
@@ -367,23 +517,7 @@ impl Parser {
                 self.advance();
                 Ok(Expression::Literal(Literal::Null))
             }
-            Tok::Ident(_) => {
-                let callee = self.identifier()?;
-                if !self.eat_punct("(") {
-                    return Ok(Expression::Identifier(callee));
-                }
-                let mut arguments = Vec::new();
-                if !self.is_punct(")") {
-                    loop {
-                        arguments.push(self.expression()?);
-                        if !self.eat_punct(",") {
-                            break;
-                        }
-                    }
-                }
-                self.expect_punct(")")?;
-                Ok(Expression::CallExpression(CallExpression { callee, arguments }))
-            }
+            Tok::Ident(_) => Ok(Expression::Identifier(self.identifier()?)),
             other => self.error(format!("ekspresi tidak lengkap, ditemukan {}", describe(&other))),
         }
     }
@@ -432,6 +566,25 @@ mod test {
 
     fn bin(left: Expression, operator: Operator, right: Expression) -> Expression {
         binary(left, operator, right)
+    }
+
+    fn call(name: &str, arguments: Vec<Expression>) -> Expression {
+        Expression::CallExpression(CallExpression { callee: Box::new(ident(name)), arguments })
+    }
+
+    fn assign(target: Expression, value: Expression) -> Expression {
+        Expression::Assignment(AssignmentExpression {
+            target: Box::new(target),
+            value: Box::new(value),
+        })
+    }
+
+    fn member(object: Expression, property: &str) -> Expression {
+        Expression::Member(Box::new(MemberExpression { object, property: String::from(property) }))
+    }
+
+    fn index(object: Expression, index: Expression) -> Expression {
+        Expression::Index(Box::new(IndexExpression { object, index }))
     }
 
     fn expr(src: &str) -> Expression {
@@ -537,21 +690,15 @@ mod test {
     fn calls_and_assignment() {
         assert_eq!(
             expr("hello()"),
-            Expression::CallExpression(CallExpression { callee: id("hello"), arguments: vec![] })
+            call("hello", vec![])
         );
         assert_eq!(
             expr("jumlah(1, x + 2)"),
-            Expression::CallExpression(CallExpression {
-                callee: id("jumlah"),
-                arguments: vec![num(1.0), bin(ident("x"), Operator::Addition, num(2.0))],
-            })
+            call("jumlah", vec![num(1.0), bin(ident("x"), Operator::Addition, num(2.0))])
         );
         assert_eq!(
             expr("x = x ^ 5"),
-            Expression::Assignment(AssignmentExpression {
-                id: id("x"),
-                value: Box::new(bin(ident("x"), Operator::Exponentiation, num(5.0))),
-            })
+            assign(ident("x"), bin(ident("x"), Operator::Exponentiation, num(5.0)))
         );
         // == is a comparison, not an assignment
         assert_eq!(expr("x == 1"), bin(ident("x"), Operator::Equal, num(1.0)));
@@ -607,11 +754,9 @@ mod test {
             vec![Statement::While(WhileStatement {
                 test: bin(ident("x"), Operator::LessThan, num(10.0)),
                 body: BlockStatement {
-                    body: Some(vec![Statement::Expression(Expression::Assignment(
-                        AssignmentExpression {
-                            id: id("x"),
-                            value: Box::new(bin(ident("x"), Operator::Addition, num(1.0))),
-                        }
+                    body: Some(vec![Statement::Expression(assign(
+                        ident("x"),
+                        bin(ident("x"), Operator::Addition, num(1.0))
                     ))])
                 },
             })]
@@ -652,6 +797,190 @@ mod test {
         );
         // division still works
         assert_eq!(expr("4 / 2"), bin(num(4.0), Operator::Division, num(2.0)));
+    }
+
+    fn text(s: &str) -> Expression {
+        Expression::Literal(Literal::String(String::from(s)))
+    }
+
+    fn block(statements: Vec<Statement>) -> BlockStatement {
+        BlockStatement { body: if statements.is_empty() { None } else { Some(statements) } }
+    }
+
+    #[test]
+    fn lists_and_objects() {
+        assert_eq!(expr("[]"), Expression::List(vec![]));
+        assert_eq!(expr("[1, x + 1, ]"), Expression::List(vec![
+            num(1.0),
+            bin(ident("x"), Operator::Addition, num(1.0)),
+        ]));
+        assert_eq!(expr("({})"), Expression::Object(vec![]));
+        assert_eq!(
+            expr("({ nama: \"Budi\", \"umur anak\": [1], })"),
+            Expression::Object(vec![
+                Property { key: PropertyKey::Name(String::from("nama")), value: text("Budi") },
+                Property {
+                    key: PropertyKey::Text(String::from("umur anak")),
+                    value: Expression::List(vec![num(1.0)]),
+                },
+            ])
+        );
+    }
+
+    #[test]
+    fn member_index_and_call_chain() {
+        assert_eq!(expr("a.b"), member(ident("a"), "b"));
+        assert_eq!(expr("a[0]"), index(ident("a"), num(0.0)));
+        assert_eq!(
+            expr("a.b[1].c"),
+            member(index(member(ident("a"), "b"), num(1.0)), "c")
+        );
+        assert_eq!(
+            expr("daftar.tambah(4)"),
+            Expression::CallExpression(CallExpression {
+                callee: Box::new(member(ident("daftar"), "tambah")),
+                arguments: vec![num(4.0)],
+            })
+        );
+        // calling the result of a call
+        assert_eq!(
+            expr("f(1)(2)"),
+            Expression::CallExpression(CallExpression {
+                callee: Box::new(call("f", vec![num(1.0)])),
+                arguments: vec![num(2.0)],
+            })
+        );
+        // postfix binds tighter than unary minus and ^
+        assert_eq!(
+            expr("-a.b ^ 2"),
+            unary(
+                UnaryOperator::Negate,
+                bin(member(ident("a"), "b"), Operator::Exponentiation, num(2.0))
+            )
+        );
+    }
+
+    #[test]
+    fn assignment_targets() {
+        assert_eq!(expr("a[0] = 1"), assign(index(ident("a"), num(0.0)), num(1.0)));
+        assert_eq!(expr("o.x = o.y = 2"), assign(
+            member(ident("o"), "x"),
+            assign(member(ident("o"), "y"), num(2.0)),
+        ));
+        assert_eq!(
+            err("1 + 2 = 3;"),
+            "baris 1, kolom 7: sebelah kiri `=` harus berupa variabel, properti, atau elemen daftar"
+        );
+        assert_eq!(
+            err("f() = 3;"),
+            "baris 1, kolom 5: sebelah kiri `=` harus berupa variabel, properti, atau elemen daftar"
+        );
+    }
+
+    #[test]
+    fn calling_a_non_function_is_an_error() {
+        assert_eq!(err("5(3);"), "baris 1, kolom 2: ini bukan fungsi dan tidak bisa dipanggil");
+        assert_eq!(err("[1](2);"), "baris 1, kolom 4: ini bukan fungsi dan tidak bisa dipanggil");
+    }
+
+    #[test]
+    fn block_versus_object() {
+        // `{` starting a statement is a block, inside an expression it is an object
+        assert_eq!(ok("{ }"), vec![Statement::BlockStatement(BlockStatement { body: None })]);
+        assert_eq!(
+            ok("jika x { }"),
+            vec![Statement::IfStatement(IfStatement {
+                test: ident("x"),
+                consequent: BlockStatement { body: None },
+                alternate: None,
+            })]
+        );
+        assert_eq!(
+            ok("misal o = { a: 1 };"),
+            vec![Statement::VariableDeclaration(VariableDeclaration {
+                kind: VariableKind::Let,
+                id: id("o"),
+                value: Expression::Object(vec![Property {
+                    key: PropertyKey::Name(String::from("a")),
+                    value: num(1.0),
+                }]),
+            })]
+        );
+    }
+
+    #[test]
+    fn for_range() {
+        assert_eq!(
+            ok("untuk i dari 1 sampai 10 { }"),
+            vec![Statement::ForRange(ForRangeStatement {
+                var: id("i"),
+                from: num(1.0),
+                to: num(10.0),
+                step: None,
+                body: block(vec![]),
+            })]
+        );
+        assert_eq!(
+            ok("untuk i dari n sampai 0 langkah -2 { berhenti; }"),
+            vec![Statement::ForRange(ForRangeStatement {
+                var: id("i"),
+                from: ident("n"),
+                to: num(0.0),
+                step: Some(unary(UnaryOperator::Negate, num(2.0))),
+                body: block(vec![Statement::Break]),
+            })]
+        );
+        assert_eq!(
+            err("untuk i dari 1 { }"),
+            "baris 1, kolom 16: diharapkan `sampai`, ditemukan `{`"
+        );
+    }
+
+    #[test]
+    fn for_each() {
+        assert_eq!(
+            ok("untuk setiap x dalam [1, 2] { lanjut; }"),
+            vec![Statement::ForEach(ForEachStatement {
+                var: id("x"),
+                iterable: Expression::List(vec![num(1.0), num(2.0)]),
+                body: block(vec![Statement::Continue]),
+            })]
+        );
+        assert_eq!(
+            err("untuk setiap x daftar { }"),
+            "baris 1, kolom 16: diharapkan `dalam`, ditemukan `daftar`"
+        );
+    }
+
+    #[test]
+    fn contextual_words_are_still_names() {
+        assert_eq!(expr("dari + sampai"), bin(ident("dari"), Operator::Addition, ident("sampai")));
+        assert!(parse_program("misal setiap = 1;").is_ok());
+        assert!(parse_program("misal untuk = 1;").is_err());
+    }
+
+    #[test]
+    fn switch() {
+        assert_eq!(
+            ok("pilih x {\n kalau 1, 2 { berhenti; }\n kalau \"a\" { }\n lain { lanjut; }\n}"),
+            vec![Statement::Switch(SwitchStatement {
+                discriminant: ident("x"),
+                cases: vec![
+                    SwitchCase { tests: vec![num(1.0), num(2.0)], body: block(vec![Statement::Break]) },
+                    SwitchCase { tests: vec![text("a")], body: block(vec![]) },
+                ],
+                default: Some(block(vec![Statement::Continue])),
+            })]
+        );
+        assert_eq!(
+            err("pilih x { }"),
+            "baris 1, kolom 11: `pilih` membutuhkan minimal satu `kalau`, ditemukan `}`"
+        );
+        // lain has to be last
+        assert_eq!(
+            err("pilih x { kalau 1 { } lain { } kalau 2 { } }"),
+            "baris 1, kolom 32: diharapkan `}`, ditemukan `kalau`"
+        );
     }
 
     #[test]
