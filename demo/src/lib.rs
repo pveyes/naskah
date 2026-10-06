@@ -25,27 +25,39 @@ enum Msg {
     ChangeCode(String),
 }
 
-const EXAMPLE_CODE: &str = "// Daftar belanja
-misal belanja = [
-  { nama: \"beras\", harga: 12 },
-  { nama: \"telur\", harga: 28 },
-];
+const EXAMPLE_CODE: &str = r#"// Hewan peliharaan
+kelas Hewan {
+  buat(nama) {
+    ini.nama = nama;
+  }
 
-misal total = 0;
-untuk setiap barang dalam belanja {
-  total = total + barang.harga;
-  tulis(barang.nama, barang.harga);
-}
-
-fungsi golongan(jumlah) {
-  pilih jumlah {
-    kalau 0 { hasilkan \"kosong\"; }
-    lain { hasilkan \"ada isi\"; }
+  suara() {
+    hasilkan "...";
   }
 }
 
-tulis(golongan(belanja.panjang), total);
-";
+kelas Kucing turunan Hewan {
+  suara() {
+    hasilkan "meong";
+  }
+}
+
+misal daftar = [baru Hewan("Burung"), baru Kucing("Tom")];
+untuk setiap h dalam daftar {
+  tulis("{h.nama} bilang {h.suara()}");
+}
+
+nanti fungsi ambil() {
+  tunggu tunda(300);
+  lempar baru Galat("jaringan putus");
+}
+
+coba {
+  tunggu ambil();
+} tangkap galat {
+  tulis("Gagal: {galat.pesan}");
+}
+"#;
 
 fn compile(src: &str) -> (String, String) {
     let t = transpile(src);

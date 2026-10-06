@@ -45,18 +45,25 @@ const WORKER_SOURCE = `
       const m = /^(\\S+) is not defined/.exec(e.message);
       if (m) return "\`" + m[1] + "\` belum dibuat. Buat dulu dengan misal " + m[1] + " = ...;";
     }
-    return e && e.message ? e.message : String(e);
+    return e && e.message ? e.message : show(e, true);
   };
 
-  onmessage = (event) => {
+  // top-level tunggu needs an async function around the program
+  const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor;
+
+  self.addEventListener("unhandledrejection", (event) => {
+    post("error", "Galat: " + describe(event.reason));
+  });
+
+  onmessage = async (event) => {
     const started = performance.now();
     try {
-      new Function("console", "prompt", "__log", '"use strict";\\n' + event.data)(sandbox, prompt, __log);
-      postMessage({ type: "done", ms: performance.now() - started });
+      const program = new AsyncFunction("console", "prompt", "__log", '"use strict";\\n' + event.data);
+      await program(sandbox, prompt, __log);
     } catch (e) {
       post("error", "Galat: " + describe(e));
-      postMessage({ type: "done", ms: performance.now() - started });
     }
+    postMessage({ type: "done", ms: performance.now() - started });
   };
 `;
 

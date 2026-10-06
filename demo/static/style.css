@@ -343,6 +343,8 @@ a {
 
 .vocab table {
   width: 100%;
+  table-layout: fixed;
+  margin-bottom: 40px;
   border-collapse: collapse;
   font-family: var(--mono);
   font-size: 0.95rem;
@@ -364,6 +366,26 @@ a {
 
 .vocab code {
   font: inherit;
+}
+
+.vocab caption {
+  padding: 0 0 12px;
+  text-align: left;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.vocab td {
+  overflow-wrap: anywhere;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
 /* Footer */

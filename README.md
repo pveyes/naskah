@@ -7,7 +7,7 @@ Demo: https://naskah.vercel.app/
 ## Tipe data
 
 - angka `123`, `1.5`, `0xff`, `0b101`
-- teks `"halo"`
+- teks `"halo"`, dengan sisipan `"Halo, {nama}!"`
 - boolean `benar` / `salah`
 - kosong `kosong`
 - daftar `[1, 2, 3]`
@@ -30,6 +30,7 @@ Dari yang paling lemah ke paling kuat:
 | `-x` | negatif |
 | `^` | pangkat |
 | `a.b` `a[0]` `f(x)` | properti, elemen, panggil fungsi |
+| `tunggu x` | tunggu hasil (setingkat dengan `-x`) |
 
 Gunakan tanda kurung `( )` untuk mengubah urutan. Komentar diawali `//`.
 
@@ -137,6 +138,83 @@ tulis(jumlah(1, 2));
 ```
 
 `tulis` menjadi `console.log` dan `tanya` menjadi `prompt`.
+
+### Teks dengan sisipan
+
+Apa pun di dalam `{ }` pada sebuah teks dihitung sebagai ekspresi.
+
+```
+misal nama = "Budi";
+tulis("Halo, {nama}! Kamu punya {belanja.panjang + 1} barang.");
+```
+
+Tulis `\{` untuk kurung kurawal biasa: `"\{bukan sisipan}"`.
+
+### Fungsi sebagai nilai
+
+`fungsi` tanpa nama bisa dikirim sebagai argumen.
+
+```
+misal ganda = angka.peta(fungsi (x) {
+  hasilkan x * 2;
+});
+```
+
+Nama bawaan untuk daftar: `panjang` (`length`), `tambah` (`push`), `gabung` (`join`), `balik` (`reverse`), `peta` (`map`), `saring` (`filter`), `cari` (`find`), `urut` (`sort`).
+
+### Nanti dan tunggu
+
+```
+nanti fungsi ambil() {
+  tunggu tunda(300);   // tunda(ms) menunggu sekian milidetik
+  hasilkan "data";
+}
+
+misal hasil = tunggu ambil();
+```
+
+### Menangani galat
+
+```
+coba {
+  lempar baru Galat("jaringan putus");
+} tangkap galat {
+  tulis("Gagal: {galat.pesan}");
+} akhirnya {
+  tulis("selesai");
+}
+```
+
+`tangkap` boleh tanpa nama, dan `coba` butuh `tangkap` atau `akhirnya`. `Galat` adalah `Error`, dan `pesan` adalah `message`.
+
+### Kelas
+
+```
+kelas Hewan {
+  buat(nama) {
+    ini.nama = nama;
+  }
+
+  suara() {
+    hasilkan "...";
+  }
+}
+
+kelas Kucing turunan Hewan {
+  buat(nama) {
+    induk(nama);
+  }
+
+  suara() {
+    hasilkan "meong, kata {ini.nama}";
+  }
+}
+
+misal kucing = baru Kucing("Tom");
+tulis(kucing.suara());
+```
+
+`buat` adalah konstruktor, `ini` adalah objek yang sedang dipakai, dan `induk` memanggil kelas induknya. Metode boleh diberi `nanti`.
 
 ### Kesalahan sintaks
 
