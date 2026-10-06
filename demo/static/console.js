@@ -1,73 +1,9 @@
-// Runs the transpiled JavaScript in a throwaway Web Worker and prints what it
-// logs. A worker has no DOM access and can be killed, so an infinite `ulang { }`
-// never freezes the page.
+// Runs the transpiled JavaScript in a throwaway Web Worker (worker.js) and prints
+// what it logs. A worker has no DOM access and can be killed, so an infinite
+// `ulang { }` never freezes the page.
 
 const TIME_LIMIT_MS = 2000;
-const MAX_LINES = 200;
 const DEBOUNCE_MS = 300;
-
-const WORKER_SOURCE = `
-  const show = (v, top, seen = []) => {
-    if (typeof v === "string") return top ? v : JSON.stringify(v);
-    if (v === null || v === undefined) return "kosong";
-    if (v === true) return "benar";
-    if (v === false) return "salah";
-    if (typeof v === "function") return "[fungsi]";
-    if (typeof v === "object") {
-      if (seen.includes(v) || seen.length > 3) return "[...]";
-      const next = seen.concat([v]);
-      if (Array.isArray(v)) return "[" + v.map((x) => show(x, false, next)).join(", ") + "]";
-      const keys = Object.keys(v);
-      if (!keys.length) return "{}";
-      return "{ " + keys.map((k) => k + ": " + show(v[k], false, next)).join(", ") + " }";
-    }
-    return String(v);
-  };
-
-  let lines = 0;
-  const post = (level, text, line) => {
-    lines += 1;
-    if (lines <= ${MAX_LINES}) postMessage({ type: "line", level, text, line });
-    else if (lines === ${MAX_LINES} + 1) postMessage({ type: "line", level: "note", text: "Keluaran dipotong setelah ${MAX_LINES} baris." });
-  };
-  const format = (args) => args.map((a) => show(a, true)).join(" ");
-  const print = (level) => (...args) => post(level, format(args));
-  const sandbox = { log: print("log"), error: print("error"), warn: print("error") };
-  // tulis(...) calls are rewritten to __log(naskahLine, ...) before running
-  const __log = (line, ...args) => post("log", format(args), line);
-  const prompt = () => {
-    post("error", "tanya() belum didukung di sini dan selalu mengembalikan kosong.");
-    return null;
-  };
-
-  const describe = (e) => {
-    if (e instanceof ReferenceError) {
-      const m = /^(\\S+) is not defined/.exec(e.message);
-      if (m) return "\`" + m[1] + "\` belum dibuat. Buat dulu dengan misal " + m[1] + " = ...;";
-    }
-    return e && e.message ? e.message : show(e, true);
-  };
-
-  // top-level tunggu needs an async function around the program
-  const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor;
-
-  self.addEventListener("unhandledrejection", (event) => {
-    post("error", "Galat: " + describe(event.reason));
-  });
-
-  onmessage = async (event) => {
-    const started = performance.now();
-    try {
-      const program = new AsyncFunction("console", "prompt", "__log", '"use strict";\\n' + event.data);
-      await program(sandbox, prompt, __log);
-    } catch (e) {
-      post("error", "Galat: " + describe(e));
-    }
-    postMessage({ type: "done", ms: performance.now() - started });
-  };
-`;
-
-const workerUrl = URL.createObjectURL(new Blob([WORKER_SOURCE], { type: "text/javascript" }));
 
 const output = document.getElementById("console-output");
 const status = document.getElementById("console-status");
@@ -81,7 +17,7 @@ function clear() {
   hideBand();
 }
 
-function addLine(level, text, sourceLine) {
+function addLine(level, text, sourceLine, column) {
   const line = document.createElement("div");
   line.className = "console-line console-" + level;
 
@@ -97,7 +33,7 @@ function addLine(level, text, sourceLine) {
 
     const site = document.createElement("span");
     site.className = "console-site";
-    site.textContent = "naskah.nsk:" + sourceLine;
+    site.textContent = "naskah.nsk:" + sourceLine + (column ? ":" + column : "");
     line.appendChild(site);
   }
   output.appendChild(line);
@@ -170,15 +106,16 @@ function hideBand() {
   bands.replaceChildren();
 }
 
-// "3:12,7:20" -> Map { 3 => 12, 7 => 20 } (JS line -> Naskah line)
-function readCallSites() {
-  const text = document.getElementById("sourcemap")?.textContent ?? "";
-  const sites = new Map();
-  for (const pair of text.split(",")) {
-    const [jsLine, naskahLine] = pair.split(":").map(Number);
-    if (jsLine && naskahLine) sites.set(jsLine, naskahLine);
-  }
-  return sites;
+// The page holds "sites|lines", each a list like "3:12,7:20" of JS line : Naskah line.
+// sites are the tulis(...) calls and lines are the first JS line of every statement.
+function readMaps() {
+  const [sitesText = "", linesText = ""] = (document.getElementById("sourcemap")?.textContent ?? "").split("|");
+  const parse = (text) =>
+    text
+      .split(",")
+      .map((pair) => pair.split(":").map(Number))
+      .filter(([jsLine, naskahLine]) => jsLine && naskahLine);
+  return { sites: new Map(parse(sitesText)), lines: parse(linesText) };
 }
 
 // Route each tulis(...) through __log(naskahLine, ...) so a log line knows where it came from.
@@ -209,7 +146,7 @@ function run(js) {
   clear();
   status.textContent = "Menjalankan…";
 
-  worker = new Worker(workerUrl);
+  worker = new Worker(new URL("./worker.js", import.meta.url), { type: "module" });
   const current = worker;
   let printed = 0;
 
@@ -241,16 +178,23 @@ function run(js) {
     addLine("error", "Galat: " + event.message);
     status.textContent = "Galat";
   };
-  current.postMessage(instrument(js, readCallSites()));
+  const { sites, lines } = readMaps();
+  current.postMessage({
+    code: instrument(js, sites),
+    lines
+  });
 }
 
 function update() {
   const js = document.getElementById("js")?.innerText ?? "";
-  if (js.startsWith("// Salah sintaks")) {
+  const mistake = /^\/\/ Salah sintaks di baris (\d+), kolom (\d+): (.*)/.exec(js);
+  if (mistake) {
+    // the student never sees the JavaScript pane, so the mistake is shown here
     stop();
     runId += 1;
-    placeholder("Perbaiki kesalahan sintaks dulu, lalu kode akan dijalankan.");
-    status.textContent = "Menunggu";
+    clear();
+    addLine("error", "Salah tulis: " + mistake[3], Number(mistake[1]), Number(mistake[2]));
+    status.textContent = "Ada yang salah";
     return;
   }
   if (js.trim() === "") {
@@ -268,6 +212,24 @@ const schedule = () => {
   clearTimeout(pending);
   pending = setTimeout(update, DEBOUNCE_MS);
 };
+
+// The generated JavaScript is hidden unless asked for.
+const playground = document.getElementById("playground");
+const jsToggle = document.getElementById("js-toggle");
+
+function showJavaScript(visible) {
+  playground.dataset.js = visible ? "shown" : "hidden";
+  jsToggle.textContent = visible ? "Sembunyikan JavaScript" : "Lihat JavaScript";
+  jsToggle.setAttribute("aria-pressed", String(visible));
+  try {
+    localStorage.setItem("naskah-javascript", visible ? "1" : "0");
+  } catch {}
+}
+
+jsToggle.addEventListener("click", () => showJavaScript(playground.dataset.js === "hidden"));
+try {
+  if (localStorage.getItem("naskah-javascript") === "1") showJavaScript(true);
+} catch {}
 
 // The playground is rendered by wasm, so watch its output pane for changes.
 new MutationObserver(schedule).observe(document.getElementById("playground"), {

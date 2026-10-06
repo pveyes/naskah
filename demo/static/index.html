@@ -30,13 +30,16 @@
         <section class="hero">
           <h1>Tulis kode dalam Bahasa Indonesia.</h1>
           <p>
-            Naskah diterjemahkan ke JavaScript langsung di browser. Ubah kode di
-            bawah dan lihat hasilnya.
+            Tulis kode di kotak Naskah, lalu lihat hasilnya di Keluaran.
+            Semuanya langsung jalan di browser.
           </p>
         </section>
 
+        <div class="playground-tools">
+          <button type="button" class="js-toggle" id="js-toggle" aria-pressed="false">Lihat JavaScript</button>
+        </div>
         <div class="playground-wrap">
-          <section class="playground" id="playground" aria-label="Playground"></section>
+          <section class="playground" id="playground" data-js="hidden" aria-label="Playground"></section>
           <div class="line-bands" id="line-bands" aria-hidden="true"></div>
         </div>
 
@@ -50,7 +53,97 @@
 
         <section class="vocab">
           <h2>Kosakata</h2>
-          <div class="vocab-tables">
+          <div class="vocab-body">
+            <div class="vocab-tables">
+          <table>
+            <caption>Dasar</caption>
+            <thead>
+              <tr><th scope="col">Naskah</th><th scope="col">Artinya</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><code class="snippet"><span class="tok-keyword">misal</span> umur = <span class="tok-number">9</span></code></td><td>Membuat nama untuk sebuah nilai.</td></tr>
+              <tr><td><code class="snippet"><span class="tok-keyword">konstan</span> pi = <span class="tok-number">3,14</span></code></td><td>Seperti misal, tetapi nilainya tidak boleh diganti.</td></tr>
+              <tr><td><code class="snippet"><span class="tok-literal">benar</span>  <span class="tok-literal">salah</span>  <span class="tok-literal">kosong</span></code></td><td>Ya, tidak, dan tidak ada nilai.</td></tr>
+              <tr><td><code class="snippet"><span class="tok-keyword">dan</span>  <span class="tok-keyword">atau</span>  <span class="tok-keyword">bukan</span></code></td><td>Menggabungkan atau membalik syarat.</td></tr>
+              <tr><td><code class="snippet"><span class="tok-function">tulis</span>(x)</code></td><td>Menampilkan x di Keluaran.</td></tr>
+              <tr><td><code class="snippet"><span class="tok-function">tanya</span>(x)</code></td><td>Bertanya kepada pengguna. Belum bisa dipakai di sini.</td></tr>
+              <tr><td><code class="snippet"><span class="tok-string">"Halo, {nama}"</span></code></td><td>Teks yang menyisipkan isi nama.</td></tr>
+            </tbody>
+          </table>
+          <table>
+            <caption>Alur</caption>
+            <thead class="sr-only">
+              <tr><th scope="col">Naskah</th><th scope="col">Artinya</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><code class="snippet"><span class="tok-keyword">jika</span> x &gt; <span class="tok-number">3</span> { }  <span class="tok-keyword">lain</span> { }</code></td><td>Kalau syaratnya benar, kerjakan yang pertama. Kalau tidak, kerjakan yang lain.</td></tr>
+              <tr><td><code class="snippet"><span class="tok-keyword">pilih</span> x { <span class="tok-keyword">kalau</span> <span class="tok-number">1</span> { }  <span class="tok-keyword">lain</span> { } }</code></td><td>Memilih satu dari beberapa kemungkinan.</td></tr>
+              <tr><td><code class="snippet"><span class="tok-keyword">selama</span> x &lt; <span class="tok-number">10</span> { }</code></td><td>Mengulang selama syaratnya masih benar.</td></tr>
+              <tr><td><code class="snippet"><span class="tok-keyword">ulang</span> { }</code></td><td>Mengulang terus sampai ada berhenti.</td></tr>
+              <tr><td><code class="snippet"><span class="tok-keyword">untuk</span> i <span class="tok-keyword">dari</span> <span class="tok-number">1</span> <span class="tok-keyword">sampai</span> <span class="tok-number">9</span> { }</code></td><td>Mengulang dengan hitungan, dari 1 sampai 9.</td></tr>
+              <tr><td><code class="snippet"><span class="tok-keyword">untuk</span> <span class="tok-keyword">setiap</span> x <span class="tok-keyword">dalam</span> daftar { }</code></td><td>Mengulang untuk setiap isi daftar.</td></tr>
+              <tr><td><code class="snippet"><span class="tok-keyword">berhenti</span>  <span class="tok-keyword">lanjut</span></code></td><td>Keluar dari ulangan, atau langsung ke putaran berikutnya.</td></tr>
+            </tbody>
+          </table>
+          <table>
+            <caption>Fungsi</caption>
+            <thead class="sr-only">
+              <tr><th scope="col">Naskah</th><th scope="col">Artinya</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><code class="snippet"><span class="tok-keyword">fungsi</span> jumlah(a, b) { }</code></td><td>Membuat perintah sendiri.</td></tr>
+              <tr><td><code class="snippet"><span class="tok-keyword">hasilkan</span> x</code></td><td>Memberikan hasil dari sebuah fungsi.</td></tr>
+              <tr><td><code class="snippet"><span class="tok-keyword">fungsi</span> (x) { }</code></td><td>Perintah tanpa nama, yang bisa dikirim ke perintah lain.</td></tr>
+              <tr><td><code class="snippet"><span class="tok-keyword">tunggu</span> x</code></td><td>Menunggu sesuatu yang selesainya nanti. Fungsi yang memakainya otomatis menunggu.</td></tr>
+              <tr><td><code class="snippet"><span class="tok-function">tunda</span>(<span class="tok-number">500</span>)</code></td><td>Menunggu 500 milidetik.</td></tr>
+              <tr><td><code class="snippet">{ <span class="tok-keyword">hasilkan</span> x }</code></td><td>Blok yang menghasilkan sebuah nilai.</td></tr>
+            </tbody>
+          </table>
+          <table>
+            <caption>Kelas</caption>
+            <thead class="sr-only">
+              <tr><th scope="col">Naskah</th><th scope="col">Artinya</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><code class="snippet"><span class="tok-class">Hewan</span>(nama) { }</code></td><td>Membuat cetakan benda. Namanya diawali huruf kapital.</td></tr>
+              <tr><td><code class="snippet"><span class="tok-class">Kucing</span>(nama) <span class="tok-keyword">turunan</span> <span class="tok-class">Hewan</span>(nama) { }</code></td><td>Cetakan baru yang mewarisi cetakan lain.</td></tr>
+              <tr><td><code class="snippet"><span class="tok-class">Hewan</span>(<span class="tok-string">"Tom"</span>)</code></td><td>Membuat sebuah benda dari cetakan.</td></tr>
+              <tr><td><code class="snippet">.nama</code></td><td>Milik benda ini sendiri.</td></tr>
+              <tr><td><code class="snippet">..suara()</code></td><td>Versi milik cetakan induk.</td></tr>
+            </tbody>
+          </table>
+          <table>
+            <caption>Galat</caption>
+            <thead class="sr-only">
+              <tr><th scope="col">Naskah</th><th scope="col">Artinya</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><code class="snippet"><span class="tok-keyword">coba</span> { }  <span class="tok-keyword">tangkap</span> g { }  <span class="tok-keyword">akhirnya</span> { }</code></td><td>Mencoba sesuatu, menangani kesalahannya, lalu membereskan.</td></tr>
+              <tr><td><code class="snippet"><span class="tok-keyword">lempar</span> <span class="tok-class">Galat</span>(<span class="tok-string">"rusak"</span>)</code></td><td>Menimbulkan kesalahan dengan sebuah pesan.</td></tr>
+              <tr><td><code class="snippet">g.pesan</code></td><td>Pesan dari sebuah kesalahan.</td></tr>
+            </tbody>
+          </table>
+          <table>
+            <caption>Daftar</caption>
+            <thead class="sr-only">
+              <tr><th scope="col">Naskah</th><th scope="col">Artinya</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><code class="snippet">daftar.panjang</code></td><td>Banyaknya isi daftar.</td></tr>
+              <tr><td><code class="snippet">daftar.tambah(x)</code></td><td>Menambah x di akhir daftar.</td></tr>
+              <tr><td><code class="snippet">daftar.gabung(<span class="tok-string">", "</span>)</code></td><td>Menyambung isi daftar menjadi satu teks.</td></tr>
+              <tr><td><code class="snippet">daftar.balik()</code></td><td>Membalik urutan isi daftar.</td></tr>
+              <tr><td><code class="snippet">daftar.peta(f)</code></td><td>Membuat daftar baru dari hasil f untuk setiap isi.</td></tr>
+              <tr><td><code class="snippet">daftar.saring(f)</code></td><td>Memilih isi yang cocok dengan f.</td></tr>
+              <tr><td><code class="snippet">daftar.cari(f)</code></td><td>Mencari isi pertama yang cocok dengan f.</td></tr>
+              <tr><td><code class="snippet">daftar.urut()</code></td><td>Mengurutkan isi daftar.</td></tr>
+            </tbody>
+          </table>
+            </div>
+
+            <details class="for-teachers">
+              <summary>Untuk guru dan pengembang: padanan JavaScript</summary>
+              <div class="vocab-tables">
           <table>
             <caption>Dasar</caption>
             <thead>
@@ -138,11 +231,13 @@
             </tbody>
           </table>
           </div>
+            </details>
+          </div>
         </section>
       </main>
 
       <footer class="foot">
-        <span>Naskah masih dalam pengembangan dan baru menghasilkan JavaScript.</span>
+        <span>Naskah masih dalam pengembangan.</span>
         <span>Lisensi MIT</span>
       </footer>
     </div>

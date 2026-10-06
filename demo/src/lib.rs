@@ -8,7 +8,7 @@ extern crate yew;
 use wasm_bindgen::prelude::*;
 use yew::prelude::*;
 
-use printer::transpile;
+use printer::transpile_checked;
 
 mod highlight;
 use highlight::{tokenize, Kind, Lang};
@@ -57,14 +57,18 @@ coba {
 }
 "#;
 
+/// The JavaScript, plus `sites|lines` for console.js: "js:naskah" pairs for every
+/// `tulis` call and for the first line of every statement.
 fn compile(src: &str) -> (String, String) {
-    let t = transpile(src);
-    let sites: Vec<String> = t
-        .call_sites
-        .iter()
-        .map(|(js, naskah)| format!("{}:{}", js, naskah))
-        .collect();
-    (t.js, sites.join(","))
+    let t = transpile_checked(src);
+    let pairs = |list: &[(usize, usize)]| {
+        list.iter()
+            .map(|(js, naskah)| format!("{}:{}", js, naskah))
+            .collect::<Vec<_>>()
+            .join(",")
+    };
+    let map = format!("{}|{}", pairs(&t.call_sites), pairs(&t.statement_lines));
+    (t.js, map)
 }
 
 fn highlighted(lang: Lang, src: &str) -> Html {

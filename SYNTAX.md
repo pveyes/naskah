@@ -8,12 +8,14 @@ Naskah ditulis dalam Bahasa Indonesia dan diterjemahkan ke JavaScript. Dokumen i
 
 ## Tipe data
 
-- angka `123`, `1.5`, `0xff`, `0b101`
+- angka `123`, `1,5`, `0xff`, `0b101`
 - teks `"halo"`, dengan sisipan `"Halo, {nama}!"`
 - boolean `benar` / `salah`
 - kosong `kosong`
 - daftar `[1, 2, 3]`
 - objek `{ nama: "Budi", umur: 3 }`
+
+Angka desimal ditulis dengan koma seperti di sekolah: `3,14`. Koma di antara dua angka tanpa spasi adalah koma desimal, jadi beri spasi setelah koma pemisah: `[1, 2, 3]` dan `jumlah(1, 5)`. Menulis `[1,2,3]` dilaporkan sebagai galat karena bisa dibaca dua cara, begitu juga `1.5` dengan titik, lengkap dengan cara menulisnya yang benar. Hasil di Keluaran juga memakai koma.
 
 ## Operator
 
@@ -46,7 +48,7 @@ Karena baris baru mengakhiri pernyataan, tanda yang membuka baris (`.`, `(`, `[`
 
 ```
 misal x = 4;
-konstan pi = 3.14;
+konstan pi = 3,14;
 x = x + 1;
 ```
 
@@ -246,4 +248,8 @@ Nama kelas ditulis seperti memanggil fungsi, jadi `hewan(nama) {` dengan huruf k
 
 ### Kesalahan sintaks
 
-Kesalahan dilaporkan dengan posisinya, misalnya `baris 1, kolom 11: ekspresi tidak lengkap, ditemukan `;``.
+Kesalahan dilaporkan satu per satu dengan posisinya, misalnya `baris 1, kolom 11: ekspresi tidak lengkap, ditemukan `;``.
+
+Nama yang dipakai tetapi belum pernah dibuat juga dilaporkan sebelum program berjalan, lengkap dengan tebakan kalau mirip salah ketik: `` `nmaa` belum dibuat. Maksudmu `nama`? ``. Nama hanya bisa dipakai di tempat ia dibuat, jadi nama yang dibuat di dalam `{ }` tidak terlihat di luarnya, dan parameter kelas (`Hewan(nama)`) hanya terlihat di konstruktor, bukan di metode.
+
+Kesalahan yang baru ketahuan saat program berjalan, misalnya mengambil sesuatu dari nilai `kosong`, juga dijelaskan dalam Bahasa Indonesia beserta nomor barisnya.

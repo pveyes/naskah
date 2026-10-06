@@ -214,7 +214,10 @@ pub fn tokenize(lang: Lang, src: &str) -> Vec<(Kind, &str)> {
         } else if c.is_ascii_digit() {
             kind = Kind::Number;
             while let Some(&(i, d)) = chars.peek() {
-                if !(d.is_ascii_alphanumeric() || d == '.') {
+                // `1,5` is one number, but `f(1, 5)` is two
+                let decimal_comma =
+                    d == ',' && chars.clone().nth(1).map_or(false, |(_, n)| n.is_ascii_digit());
+                if !(d.is_ascii_alphanumeric() || d == '.' || decimal_comma) {
                     break;
                 }
                 end = i + d.len_utf8();
@@ -353,6 +356,18 @@ mod test {
         let src = "\"a {b\nx";
         let joined: String = tokenize(Lang::Naskah, src).iter().map(|t| t.1).collect();
         assert_eq!(joined, src);
+    }
+
+    #[test]
+    fn decimal_commas_are_one_number() {
+        let toks = tokenize(Lang::Naskah, "f(1,5, 2)");
+        assert!(toks.contains(&(Kind::Number, "1,5")), "{:?}", toks);
+        assert!(toks.contains(&(Kind::Number, "2")), "{:?}", toks);
+        let toks = tokenize(Lang::Naskah, "f(1, 5)");
+        assert!(toks.contains(&(Kind::Number, "1")), "{:?}", toks);
+        assert!(toks.contains(&(Kind::Number, "5")), "{:?}", toks);
+        let joined: String = tokenize(Lang::Naskah, "x = 3,14 + [1,5]").iter().map(|t| t.1).collect();
+        assert_eq!(joined, "x = 3,14 + [1,5]");
     }
 
     #[test]

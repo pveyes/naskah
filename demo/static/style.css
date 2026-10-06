@@ -125,6 +125,37 @@ a {
 }
 
 /* Playground */
+.playground-tools {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 8px;
+}
+
+.js-toggle {
+  padding: 4px 0;
+  border: 0;
+  background: none;
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.875rem;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  cursor: pointer;
+}
+
+.js-toggle:hover {
+  color: var(--ink);
+}
+
+/* the generated JavaScript is for teachers, not for the student */
+.playground[data-js="hidden"] {
+  grid-template-columns: 1fr;
+}
+
+.playground[data-js="hidden"] .pane + .pane {
+  display: none;
+}
+
 .playground-wrap {
   position: relative;
 }
@@ -342,6 +373,42 @@ a {
   font-size: clamp(2rem, 4vw, 2.75rem);
   font-weight: 400;
   line-height: 1.1;
+}
+
+.vocab-body {
+  min-width: 0;
+}
+
+.vocab .snippet {
+  font-size: 0.875rem;
+  white-space: pre-wrap;
+}
+
+.vocab td:first-child {
+  padding-right: 16px;
+}
+
+/* the explanations are ordinary text, only the Naskah column is code */
+.vocab .vocab-tables td:last-child {
+  font-family: var(--sans);
+  font-size: 0.95rem;
+}
+
+.for-teachers {
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.for-teachers summary {
+  cursor: pointer;
+  padding: 12px 0;
+  text-underline-offset: 4px;
+}
+
+.for-teachers summary:hover {
+  color: var(--ink);
+  text-decoration: underline;
 }
 
 .vocab table {
