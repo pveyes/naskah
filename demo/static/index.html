@@ -14,12 +14,13 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600&family=IM+Fell+English&family=JetBrains+Mono:wght@400;500&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600&family=IM+Fell+English&family=Noto+Sans+Javanese:wght@400&family=JetBrains+Mono:wght@400;500&display=swap"
     />
     <link rel="stylesheet" type="text/css" href="./style.css" />
   </head>
 
   <body>
+    <canvas class="aksara" id="aksara" aria-hidden="true"></canvas>
     <div class="page">
       <header class="top">
         <span class="wordmark">naskah</span>
@@ -30,8 +31,14 @@
       </header>
 
       <main>
-        <section class="hero">
-          <h1>Tulis kode dalam Bahasa Indonesia.</h1>
+        <section class="hero hero-home">
+          <h1>
+            <span class="tinta" style="--i: 0">Tulis</span>
+            <span class="tinta" style="--i: 1">kode</span>
+            <span class="tinta" style="--i: 2">dalam</span>
+            <span class="tinta" style="--i: 3">Bahasa</span>
+            <span class="tinta" style="--i: 4">Indonesia.</span>
+          </h1>
           <p>
             Tulis kode di kotak Naskah, lalu lihat hasilnya di Keluaran.
             Semuanya langsung jalan di sini. Baru mulai?
@@ -163,6 +170,7 @@
     </div>
 
     <script type="module" src="./mulai.js"></script>
+    <script type="module" src="./aksara.js"></script>
     <script type="module" src="./console.js"></script>
   </body>
 </html>

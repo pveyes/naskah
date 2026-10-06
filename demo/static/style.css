@@ -124,6 +124,75 @@ a {
   color: var(--muted);
 }
 
+/* Home page hero: words soak into the page like ink, a red rubric line is drawn under them and
+   old Javanese letters drift up behind. All of it is off when the reader prefers less motion. */
+.hero-home {
+  position: relative;
+}
+
+.hero-home h1::after {
+  content: "";
+  display: block;
+  width: min(12ch, 60%);
+  height: 2px;
+  margin-top: 22px;
+  background: linear-gradient(90deg, var(--focus), transparent);
+  transform-origin: left;
+}
+
+/* Canvas behind the top of the page, drawn by aksara.js. It ends halfway down the code box and
+   fades out before that, so the content further down never sits on the animation. */
+.aksara {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  pointer-events: none;
+  -webkit-mask-image: linear-gradient(#000 45%, transparent);
+  mask-image: linear-gradient(#000 45%, transparent);
+}
+
+body:has(.aksara) .page {
+  position: relative;
+  z-index: 1;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .tinta {
+    display: inline-block;
+    animation: meresap 1.1s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+    animation-delay: calc(var(--i) * 0.16s + 0.1s);
+  }
+
+  .hero-home h1::after {
+    animation: garis 1.2s cubic-bezier(0.6, 0, 0.2, 1) 1s both;
+  }
+
+  @keyframes meresap {
+    from {
+      opacity: 0;
+      filter: blur(8px);
+      transform: translateY(0.12em);
+      letter-spacing: 0.04em;
+    }
+    to {
+      opacity: 1;
+      filter: blur(0);
+      transform: none;
+      letter-spacing: 0;
+    }
+  }
+
+  @keyframes garis {
+    from {
+      transform: scaleX(0);
+    }
+    to {
+      transform: scaleX(1);
+    }
+  }
+}
+
 /* Navigation in the header */
 .top nav {
   display: flex;
