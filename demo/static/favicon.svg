@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <rect width="64" height="64" rx="14" fill="#2b1d12"/>
+  <!-- the sheet between the two rolls -->
+  <path d="M16 15h32v34H16z" fill="#f2e3bd"/>
+  <path d="M16 15v34M48 15v34" stroke="#b58a4a" stroke-width="2"/>
+  <!-- writing -->
+  <path d="M22 24h20M22 31h20M22 38h13" stroke="#8c2f1b" stroke-width="3" stroke-linecap="round"/>
+  <!-- rolls -->
+  <rect x="9" y="9" width="46" height="10" rx="5" fill="#dcb872" stroke="#6b4423" stroke-width="2"/>
+  <rect x="9" y="45" width="46" height="10" rx="5" fill="#dcb872" stroke="#6b4423" stroke-width="2"/>
+  <ellipse cx="14" cy="14" rx="2" ry="3" fill="#8a5a2b"/>
+  <ellipse cx="50" cy="50" rx="2" ry="3" fill="#8a5a2b"/>
+</svg>
