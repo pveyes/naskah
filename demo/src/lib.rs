@@ -26,36 +26,34 @@ enum Msg {
 }
 
 const EXAMPLE_CODE: &str = r#"// Hewan peliharaan
-kelas Hewan {
-  buat(nama) {
-    ini.nama = nama;
-  }
+Hewan(nama) {
+  .nama = nama
 
   suara() {
-    hasilkan "...";
+    hasilkan "..."
   }
 }
 
-kelas Kucing turunan Hewan {
+Kucing(nama) turunan Hewan(nama) {
   suara() {
-    hasilkan "meong";
+    hasilkan "meong, bukan {..suara()}"
   }
 }
 
-misal daftar = [baru Hewan("Burung"), baru Kucing("Tom")];
+misal daftar = [Hewan("Burung"), Kucing("Tom")]
 untuk setiap h dalam daftar {
-  tulis("{h.nama} bilang {h.suara()}");
+  tulis("{h.nama} bilang {h.suara()}")
 }
 
-nanti fungsi ambil() {
-  tunggu tunda(300);
-  lempar baru Galat("jaringan putus");
+fungsi ambil() {
+  tunggu tunda(300)
+  lempar Galat("jaringan putus")
 }
 
 coba {
-  tunggu ambil();
+  tunggu ambil()
 } tangkap galat {
-  tulis("Gagal: {galat.pesan}");
+  tulis("Gagal: {galat.pesan}")
 }
 "#;
 

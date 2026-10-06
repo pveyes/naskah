@@ -86,9 +86,10 @@
             </thead>
             <tbody>
               <tr><td><code class="tok-keyword">fungsi</code> nama(x)</td><td><code class="tok-keyword">function</code> nama(x)</td></tr>
-              <tr><td><code class="tok-keyword">fungsi</code> (x)</td><td><code class="tok-keyword">function</code> (x)</td></tr>
+              <tr><td><code class="tok-keyword">fungsi</code> (x)</td><td>(x) =&gt; { }</td></tr>
               <tr><td><code class="tok-keyword">hasilkan</code></td><td><code class="tok-keyword">return</code></td></tr>
-              <tr><td><code class="tok-keyword">nanti</code> <code class="tok-keyword">fungsi</code></td><td><code class="tok-keyword">async</code> <code class="tok-keyword">function</code></td></tr>
+              <tr><td>{ <code class="tok-keyword">hasilkan</code> x }</td><td>(() =&gt; { <code class="tok-keyword">return</code> x })()</td></tr>
+              <tr><td><code class="tok-keyword">fungsi</code> berisi <code class="tok-keyword">tunggu</code></td><td><code class="tok-keyword">async</code> <code class="tok-keyword">function</code></td></tr>
               <tr><td><code class="tok-keyword">tunggu</code></td><td><code class="tok-keyword">await</code></td></tr>
               <tr><td><code class="tok-function">tunda</code>(ms)</td><td><code class="tok-keyword">new</code> Promise(... setTimeout ...)</td></tr>
             </tbody>
@@ -99,12 +100,11 @@
               <tr><th scope="col">Naskah</th><th scope="col">JavaScript</th></tr>
             </thead>
             <tbody>
-              <tr><td><code class="tok-keyword">kelas</code></td><td><code class="tok-keyword">class</code></td></tr>
-              <tr><td><code class="tok-keyword">turunan</code></td><td><code class="tok-keyword">extends</code></td></tr>
-              <tr><td><code class="tok-keyword">buat</code>(x) { }</td><td><code class="tok-keyword">constructor</code>(x) { }</td></tr>
-              <tr><td><code class="tok-keyword">baru</code> Kucing()</td><td><code class="tok-keyword">new</code> Kucing()</td></tr>
-              <tr><td><code class="tok-keyword">ini</code></td><td><code class="tok-keyword">this</code></td></tr>
-              <tr><td><code class="tok-keyword">induk</code>(x) / <code class="tok-keyword">induk</code>.suara()</td><td><code class="tok-keyword">super</code>(x) / <code class="tok-keyword">super</code>.suara()</td></tr>
+              <tr><td><code class="tok-class">Hewan</code>(x) { }</td><td><code class="tok-keyword">class</code> <code class="tok-class">Hewan</code> { <code class="tok-keyword">constructor</code>(x) { } }</td></tr>
+              <tr><td><code class="tok-class">Kucing</code>(x) <code class="tok-keyword">turunan</code> <code class="tok-class">Hewan</code>(y)</td><td><code class="tok-keyword">class</code> <code class="tok-class">Kucing</code> <code class="tok-keyword">extends</code> <code class="tok-class">Hewan</code> { <code class="tok-keyword">constructor</code>(x) { <code class="tok-keyword">super</code>(y) } }</td></tr>
+              <tr><td><code class="tok-class">Kucing</code>(x)</td><td><code class="tok-keyword">new</code> <code class="tok-class">Kucing</code>(x)</td></tr>
+              <tr><td>.<code class="tok-function">nama</code></td><td><code class="tok-keyword">this</code>.nama</td></tr>
+              <tr><td>..<code class="tok-function">suara</code>()</td><td><code class="tok-keyword">super</code>.suara()</td></tr>
             </tbody>
           </table>
           <table>
@@ -115,7 +115,7 @@
             <tbody>
               <tr><td><code class="tok-keyword">coba</code> / <code class="tok-keyword">tangkap</code> / <code class="tok-keyword">akhirnya</code></td><td><code class="tok-keyword">try</code> / <code class="tok-keyword">catch</code> / <code class="tok-keyword">finally</code></td></tr>
               <tr><td><code class="tok-keyword">lempar</code></td><td><code class="tok-keyword">throw</code></td></tr>
-              <tr><td><code class="tok-function">Galat</code>(x)</td><td><code class="tok-function">Error</code>(x)</td></tr>
+              <tr><td><code class="tok-class">Galat</code>(x)</td><td><code class="tok-keyword">new</code> <code class="tok-class">Error</code>(x)</td></tr>
               <tr><td>e.<code class="tok-function">pesan</code></td><td>e.<code class="tok-function">message</code></td></tr>
             </tbody>
           </table>

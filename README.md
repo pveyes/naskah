@@ -36,6 +36,10 @@ Gunakan tanda kurung `( )` untuk mengubah urutan. Komentar diawali `//`.
 
 ## Sintaks
 
+Sebuah pernyataan berakhir di titik koma, di akhir baris, atau sebelum `}`. Jadi `misal x = 1;` dan `misal x = 1` sama saja.
+
+Karena baris baru mengakhiri pernyataan, tanda yang membuka baris (`.`, `(`, `[`, `-`, dan operator) tidak melanjutkan baris sebelumnya. Untuk memecah ekspresi panjang, akhiri baris dengan operatornya (`a +`, `xs.`), atau tulis di dalam `( )`, `[ ]`, dan `{ }`.
+
 ### Variabel
 
 ```
@@ -125,7 +129,7 @@ misal orang = { nama: "Budi", umur: 3 };
 orang.umur = orang.umur + 1;
 ```
 
-Nama lain untuk daftar: `panjang` (`length`), `tambah` (`push`), `gabung` (`join`), `balik` (`reverse`). Nama ini diterjemahkan di mana pun dipakai, termasuk sebagai nama properti objek.
+Nama khusus untuk daftar: `panjang` (`length`), `tambah` (`push`), `gabung` (`join`), `balik` (`reverse`). Nama ini diterjemahkan di mana pun dipakai, termasuk sebagai nama properti objek.
 
 ### Fungsi
 
@@ -162,10 +166,12 @@ misal ganda = angka.peta(fungsi (x) {
 
 Nama bawaan untuk daftar: `panjang` (`length`), `tambah` (`push`), `gabung` (`join`), `balik` (`reverse`), `peta` (`map`), `saring` (`filter`), `cari` (`find`), `urut` (`sort`).
 
-### Nanti dan tunggu
+### Tunggu
+
+`tunggu` menunggu hasil yang datang nanti. Fungsi yang berisi `tunggu` otomatis menjadi `async`, tidak perlu penanda tambahan.
 
 ```
-nanti fungsi ambil() {
+fungsi ambil() {
   tunggu tunda(300);   // tunda(ms) menunggu sekian milidetik
   hasilkan "data";
 }
@@ -177,7 +183,7 @@ misal hasil = tunggu ambil();
 
 ```
 coba {
-  lempar baru Galat("jaringan putus");
+  lempar Galat("jaringan putus");
 } tangkap galat {
   tulis("Gagal: {galat.pesan}");
 } akhirnya {
@@ -189,32 +195,52 @@ coba {
 
 ### Kelas
 
+Kelas ditulis seperti memanggil fungsi, dengan nama berhuruf kapital. Isi badan kelas adalah konstruktornya, dan `suara() { }` adalah metode.
+
 ```
-kelas Hewan {
-  buat(nama) {
-    ini.nama = nama;
-  }
+Hewan(nama) {
+  .nama = nama
 
   suara() {
-    hasilkan "...";
+    hasilkan "..."
   }
 }
 
-kelas Kucing turunan Hewan {
-  buat(nama) {
-    induk(nama);
-  }
-
+Kucing(nama) turunan Hewan(nama) {
   suara() {
-    hasilkan "meong, kata {ini.nama}";
+    hasilkan "meong, bukan {..suara()}"
   }
 }
 
-misal kucing = baru Kucing("Tom");
-tulis(kucing.suara());
+misal kucing = Kucing("Tom")
+tulis(kucing.suara())
 ```
 
-`buat` adalah konstruktor, `ini` adalah objek yang sedang dipakai, dan `induk` memanggil kelas induknya. Metode boleh diberi `nanti`.
+- `.nama` adalah `nama` milik objek yang sedang dijalankan, dan `..nama` adalah versi milik kelas induk. Keduanya hanya bisa dipakai di dalam kelas, termasuk di dalam fungsi tanpa nama (`fungsi (x) { }`) dan teks bersisipan, tetapi tidak di dalam `fungsi nama() { }`.
+- `turunan Hewan(nama)` menyebut kelas induk beserta argumen yang dikirim ke konstruktornya. Argumen itu dihitung sebelum objek ada, jadi tidak bisa memakai `.nama` atau `tunggu`.
+- Metode dengan nama yang sama menggantikan metode induk, tanpa kata khusus. Pakai `..suara()` untuk tetap memanggil versi induk.
+- Konstruktor dibuat jika badan kelas berisi pernyataan atau kelas punya induk.
+- `tunggu` tidak bisa dipakai langsung di badan kelas, hanya di dalam metode.
+
+### Blok sebagai nilai
+
+Blok `{ ... }` yang dipakai sebagai nilai menjalankan isinya dan menghasilkan nilai dari `hasilkan`.
+
+```
+Hewan(nama) {
+  .nama = { misal x = 5; hasilkan nama + x }
+}
+```
+
+`{ nama: 1 }` dan `{}` adalah objek, selain itu adalah blok. `hasilkan` di dalam blok keluar dari blok itu saja, bukan dari fungsi di sekitarnya. `berhenti` dan `lanjut` tidak bisa menembus blok.
+
+### Huruf kapital
+
+Huruf kapital hanya untuk kelas. Nama kelas harus diawali huruf kapital, sedangkan variabel, fungsi, parameter, dan metode harus diawali huruf kecil.
+
+Memanggil nama berhuruf kapital selalu membuat objek baru, tanpa kata `baru`: `Kucing("Tom")`, `Galat("rusak")`, `Date()`. Memanggil metode berhuruf kecil seperti `Math.max(1, 2)` tetap pemanggilan biasa.
+
+Nama kelas ditulis seperti memanggil fungsi, jadi `hewan(nama) {` dengan huruf kecil dianggap salah tulis dan dilaporkan sebagai galat.
 
 ### Kesalahan sintaks
 

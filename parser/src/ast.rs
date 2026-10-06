@@ -82,15 +82,17 @@ pub enum Expression {
     Object(Vec<Property>),
     /// `"Halo, {nama}!"`
     Template(Vec<TemplatePart>),
-    /// `fungsi (x) { }` and `nanti fungsi (x) { }`
+    /// `fungsi (x) { }`, async when its body uses `tunggu`
     Function(Box<FunctionExpression>),
-    /// `baru Kelas(argumen)`
+    /// `Kelas(argumen)`: calling a capitalised name builds an object
     New(Box<NewExpression>),
     /// `tunggu ekspresi`
     Await(Box<Expression>),
-    /// `ini`
+    /// `{ misal x = 5; hasilkan x + 1 }`, a block that produces a value
+    Block(Box<BlockExpression>),
+    /// Only appears as `.nama`, the object a class method is running on.
     This,
-    /// `induk`
+    /// Only appears as `..nama`, the parent class's version of `.nama`.
     Super,
 }
 
@@ -105,6 +107,13 @@ pub enum TemplatePart {
 pub struct FunctionExpression {
     pub params: Vec<Identifier>,
     pub body: BlockStatement,
+    pub is_async: bool,
+}
+
+#[derive(PartialEq, Debug, Clone)]
+pub struct BlockExpression {
+    pub body: BlockStatement,
+    /// True when the block uses `tunggu`.
     pub is_async: bool,
 }
 
@@ -172,20 +181,25 @@ pub struct Method {
     pub is_async: bool,
 }
 
-/// `kelas Kucing turunan Hewan { buat(nama) { } suara() { } }`
+/// `turunan Hewan(nama)`: the class being extended and the arguments its
+/// constructor is called with.
+#[derive(PartialEq, Debug, Clone)]
+pub struct ParentClass {
+    pub id: Identifier,
+    pub arguments: Vec<Expression>,
+}
+
+/// `Kucing(nama) turunan Hewan(nama) { suara() { } }`
+///
+/// The statements in the body make up the constructor, in order. Methods are
+/// collected separately.
 #[derive(PartialEq, Debug, Clone)]
 pub struct ClassDeclaration {
     pub id: Identifier,
-    pub parent: Option<Identifier>,
-    /// `buat(...) { }`
-    pub constructor: Option<Constructor>,
-    pub methods: Vec<Method>,
-}
-
-#[derive(PartialEq, Debug, Clone)]
-pub struct Constructor {
     pub params: Vec<Identifier>,
-    pub body: BlockStatement,
+    pub parent: Option<ParentClass>,
+    pub body: Vec<Statement>,
+    pub methods: Vec<Method>,
 }
 
 #[derive(PartialEq, Debug, Clone)]

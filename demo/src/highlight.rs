@@ -14,6 +14,7 @@ pub enum Kind {
     Number,
     Str,
     Function,
+    Class,
     Operator,
     Comment,
 }
@@ -27,6 +28,7 @@ impl Kind {
             Kind::Number => "tok-number",
             Kind::Str => "tok-string",
             Kind::Function => "tok-function",
+            Kind::Class => "tok-class",
             Kind::Operator => "tok-operator",
             Kind::Comment => "tok-comment",
         }
@@ -39,8 +41,8 @@ impl Lang {
             Lang::Naskah => &[
                 "misal", "konstan", "jika", "lain", "selama", "ulang", "berhenti", "lanjut",
                 "fungsi", "hasilkan", "dan", "atau", "bukan", "untuk", "setiap", "dari", "sampai",
-                "langkah", "dalam", "pilih", "kalau", "coba", "tangkap", "akhirnya", "lempar", "nanti",
-                "tunggu", "kelas", "turunan", "buat", "baru", "ini", "induk",
+                "langkah", "dalam", "pilih", "kalau", "coba", "tangkap", "akhirnya", "lempar", "tunggu",
+                "turunan",
             ],
             Lang::JavaScript => &[
                 "var", "let", "const", "if", "else", "for", "while", "break", "continue",
@@ -117,6 +119,60 @@ fn braces_end(lang: Lang, src: &str, start: usize) -> usize {
     bytes.len()
 }
 
+/// Push the string `src[start..end]`. Text stays a string, but the code inside
+/// `{...}` (Naskah) or `${...}` (JS template) is highlighted as code.
+fn push_string<'a>(
+    lang: Lang,
+    src: &'a str,
+    start: usize,
+    end: usize,
+    out: &mut Vec<(Kind, &'a str)>,
+) {
+    let bytes = src.as_bytes();
+    let quote = bytes[start];
+    let mut text_start = start;
+    let mut i = start + 1;
+
+    while i < end {
+        // (where the interpolation's `{` is, and how long its opening is)
+        let open = match bytes[i] {
+            b'\\' => {
+                i += 1 + src[i + 1..].chars().next().map_or(0, |c| c.len_utf8());
+                continue;
+            }
+            b'{' if quote == b'"' && lang == Lang::Naskah => Some((i, 1)),
+            b'$' if quote == b'`' && bytes.get(i + 1) == Some(&b'{') => Some((i + 1, 2)),
+            _ => None,
+        };
+        let (brace, opening) = match open {
+            Some(found) => found,
+            None => {
+                i += 1;
+                continue;
+            }
+        };
+
+        let close = braces_end(lang, src, brace).min(end);
+        let terminated = close > brace + 1 && bytes[close - 1] == b'}';
+        let inner_end = if terminated { close - 1 } else { close };
+
+        if text_start < i {
+            out.push((Kind::Str, &src[text_start..i]));
+        }
+        out.push((Kind::Operator, &src[i..i + opening]));
+        out.extend(tokenize(lang, &src[brace + 1..inner_end]));
+        if terminated {
+            out.push((Kind::Operator, &src[close - 1..close]));
+        }
+        text_start = close;
+        i = close;
+    }
+
+    if text_start < end {
+        out.push((Kind::Str, &src[text_start..end]));
+    }
+}
+
 /// Split `src` into contiguous tokens. Concatenating the text of every
 /// token always yields `src` back.
 pub fn tokenize(lang: Lang, src: &str) -> Vec<(Kind, &str)> {
@@ -146,14 +202,15 @@ pub fn tokenize(lang: Lang, src: &str) -> Vec<(Kind, &str)> {
                 chars.next();
             }
         } else if c == '"' || c == '\'' || (c == '`' && lang == Lang::JavaScript) {
-            kind = Kind::Str;
             end = string_end(lang, src, start);
+            push_string(lang, src, start, end, &mut tokens);
             while let Some(&(i, _)) = chars.peek() {
                 if i >= end {
                     break;
                 }
                 chars.next();
             }
+            continue;
         } else if c.is_ascii_digit() {
             kind = Kind::Number;
             while let Some(&(i, d)) = chars.peek() {
@@ -177,6 +234,9 @@ pub fn tokenize(lang: Lang, src: &str) -> Vec<(Kind, &str)> {
                 Kind::Keyword
             } else if lang.literals().contains(&word) {
                 Kind::Literal
+            } else if word.chars().next().map_or(false, |c| c.is_uppercase()) {
+                // capital letters are for classes
+                Kind::Class
             } else if src[end..].starts_with('(') {
                 Kind::Function
             } else {
@@ -234,12 +294,12 @@ mod test {
         for word in &["fungsi", "hasilkan", "dan", "bukan"] {
             assert!(toks.contains(&(Kind::Keyword, *word)), "{}", word);
         }
-        let toks = tokenize(Lang::Naskah, "kelas A turunan B { buat() { induk(); ini.x = baru C(); } }");
-        for word in &["kelas", "turunan", "buat", "induk", "ini", "baru"] {
+        let toks = tokenize(Lang::Naskah, "A() turunan B() { .x = 1 }");
+        for word in &["turunan"] {
             assert!(toks.contains(&(Kind::Keyword, *word)), "{}", word);
         }
-        let toks = tokenize(Lang::Naskah, "coba { lempar x; } tangkap e { } akhirnya { } nanti fungsi f() { tunggu g(); }");
-        for word in &["coba", "lempar", "tangkap", "akhirnya", "nanti", "tunggu"] {
+        let toks = tokenize(Lang::Naskah, "coba { lempar x; } tangkap e { } akhirnya { } fungsi f() { tunggu g(); }");
+        for word in &["coba", "lempar", "tangkap", "akhirnya", "tunggu"] {
             assert!(toks.contains(&(Kind::Keyword, *word)), "{}", word);
         }
         let toks = tokenize(Lang::Naskah, "untuk setiap x dalam y { } pilih z { kalau 1 { } lain { } }");
@@ -249,21 +309,71 @@ mod test {
     }
 
     #[test]
-    fn interpolations_stay_inside_the_string() {
+    fn interpolations_are_highlighted_as_code() {
+        let src = "\"{h.nama} bilang {h.suara()}\"";
+        let toks = tokenize(Lang::Naskah, src);
+        assert_eq!(
+            toks,
+            vec![
+                (Kind::Str, "\""),
+                (Kind::Operator, "{"),
+                (Kind::Plain, "h"),
+                (Kind::Operator, "."),
+                (Kind::Plain, "nama"),
+                (Kind::Operator, "}"),
+                (Kind::Str, " bilang "),
+                (Kind::Operator, "{"),
+                (Kind::Plain, "h"),
+                (Kind::Operator, "."),
+                (Kind::Function, "suara"),
+                (Kind::Operator, "("),
+                (Kind::Operator, ")"),
+                (Kind::Operator, "}"),
+                (Kind::Str, "\""),
+            ]
+        );
+    }
+
+    #[test]
+    fn strings_nest_inside_interpolations() {
         let src = "tulis(\"a {f(\"}\")} b\", 1);";
         let toks = tokenize(Lang::Naskah, src);
-        assert!(toks.contains(&(Kind::Str, "\"a {f(\"}\")} b\"")), "{:?}", toks);
+        // the inner "}" is a string of its own, and the text after the braces is a string again
+        assert!(toks.contains(&(Kind::Str, "\"}\"")), "{:?}", toks);
+        assert!(toks.contains(&(Kind::Function, "f")), "{:?}", toks);
+        assert!(toks.contains(&(Kind::Str, " b\"")), "{:?}", toks);
         assert!(toks.contains(&(Kind::Number, "1")));
+        let joined: String = toks.iter().map(|t| t.1).collect();
+        assert_eq!(joined, src);
+
         // an escaped brace opens nothing
         let toks = tokenize(Lang::Naskah, "\"\\{a\" 2");
         assert!(toks.contains(&(Kind::Str, "\"\\{a\"")), "{:?}", toks);
+        // an unclosed brace still round-trips
+        let src = "\"a {b\nx";
+        let joined: String = tokenize(Lang::Naskah, src).iter().map(|t| t.1).collect();
+        assert_eq!(joined, src);
+    }
+
+    #[test]
+    fn capitalised_names_are_classes() {
+        let toks = tokenize(Lang::Naskah, "x = Hewan(1); y.Z; hewan(2)");
+        assert!(toks.contains(&(Kind::Class, "Hewan")), "{:?}", toks);
+        assert!(toks.contains(&(Kind::Class, "Z")));
+        assert!(toks.contains(&(Kind::Function, "hewan")));
+        let toks = tokenize(Lang::JavaScript, "new Error(m)");
+        assert!(toks.contains(&(Kind::Class, "Error")));
     }
 
     #[test]
     fn javascript_templates() {
         let src = "x = `a ${f(`b ${c}`)} d`; y";
         let toks = tokenize(Lang::JavaScript, src);
-        assert!(toks.contains(&(Kind::Str, "`a ${f(`b ${c}`)} d`")), "{:?}", toks);
+        assert!(toks.contains(&(Kind::Str, "`a ")), "{:?}", toks);
+        assert!(toks.contains(&(Kind::Operator, "${")), "{:?}", toks);
+        assert!(toks.contains(&(Kind::Function, "f")), "{:?}", toks);
+        assert!(toks.contains(&(Kind::Str, "`b ")), "{:?}", toks);
+        assert!(toks.contains(&(Kind::Str, " d`")), "{:?}", toks);
         assert_eq!(toks.last(), Some(&(Kind::Plain, "y")));
         let joined: String = toks.iter().map(|t| t.1).collect();
         assert_eq!(joined, src);

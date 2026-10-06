@@ -258,7 +258,7 @@ mod test {
     #[test]
     fn async_and_await() {
         assert_eq!(
-            js("nanti fungsi ambil() {\ntunggu tunda(100);\nhasilkan 1;\n}\nmisal x = tunggu ambil();"),
+            js("fungsi ambil() {\ntunggu tunda(100);\nhasilkan 1;\n}\nmisal x = tunggu ambil();"),
             "async function ambil() {\n  await new Promise((resolve) => setTimeout(resolve, 100));\n  return 1;\n}\nlet x = await ambil();\n"
         );
         assert_eq!(js("x = (tunggu a).b;"), "x = (await a).b;\n");
@@ -269,24 +269,28 @@ mod test {
     }
 
     #[test]
-    fn function_values() {
+    fn function_values_are_arrow_functions() {
         assert_eq!(
             js("xs.peta(fungsi (x) {\nhasilkan x * 2;\n});"),
-            "xs.map(function (x) {\n  return x * 2;\n});\n"
+            "xs.map((x) => {\n  return x * 2;\n});\n"
         );
         assert_eq!(
             js("jika benar {\nxs.saring(fungsi (x) {\nhasilkan x;\n});\n}"),
-            "if (true) {\n  xs.filter(function (x) {\n    return x;\n  });\n}\n"
+            "if (true) {\n  xs.filter((x) => {\n    return x;\n  });\n}\n"
         );
-        assert_eq!(js("f(nanti fungsi () { });"), "f(async function () {\n});\n");
+        assert_eq!(js("f(fungsi () { });"), "f(() => {\n});\n");
+        assert_eq!(
+            js("f(fungsi () {\ntunggu g();\n});"),
+            "f(async () => {\n  await g();\n});\n"
+        );
         assert_eq!(
             js("misal g = fungsi (a, b) {\nhasilkan a;\n};"),
-            "let g = function (a, b) {\n  return a;\n};\n"
+            "let g = (a, b) => {\n  return a;\n};\n"
         );
         // nested function values keep their own indentation
         assert_eq!(
             js("f(fungsi () {\ng(fungsi () {\nlanjut;\n});\n});"),
-            "f(function () {\n  g(function () {\n    continue;\n  });\n});\n"
+            "f(() => {\n  g(() => {\n    continue;\n  });\n});\n"
         );
     }
 
@@ -299,55 +303,136 @@ mod test {
     #[test]
     fn try_catch_finally_and_throw() {
         assert_eq!(
-            js("coba {\nlempar baru Galat(\"x\");\n} tangkap galat {\ntulis(galat.pesan);\n} akhirnya {\n}"),
+            js("coba {\nlempar Galat(\"x\");\n} tangkap galat {\ntulis(galat.pesan);\n} akhirnya {\n}"),
             "try {\n  throw new Error(\"x\");\n} catch (galat) {\n  console.log(galat.message);\n} finally {\n}\n"
         );
         assert_eq!(js("coba {\n} tangkap {\n}"), "try {\n} catch {\n}\n");
         assert_eq!(js("lempar \"teks\";"), "throw \"teks\";\n");
-        assert_eq!(js("x = Galat(\"y\");"), "x = Error(\"y\");\n");
+        assert_eq!(js("x = Galat(\"y\");"), "x = new Error(\"y\");\n");
     }
 
     #[test]
     fn classes() {
-        let src = "kelas Kucing turunan Hewan {
-nanti ambil() {
-}
-buat(nama) {
-induk(nama);
-ini.umur = 1;
+        let src = "Kucing(nama) turunan Hewan(nama, 1) {
+.umur = 1
+ambil() {
+tunggu g()
 }
 suara() {
-hasilkan induk.suara();
+hasilkan .umur
 }
 }
-misal k = baru Kucing(\"Tom\");";
+misal k = Kucing(\"Tom\")";
         assert_eq!(
             js(src),
             "class Kucing extends Hewan {
   constructor(nama) {
-    super(nama);
+    super(nama, 1);
     this.umur = 1;
   }
   async ambil() {
+    await g();
   }
   suara() {
-    return super.suara();
+    return this.umur;
   }
 }
 let k = new Kucing(\"Tom\");
 "
         );
-        assert_eq!(js("kelas A {\n}"), "class A {\n}\n");
+        // a base class with no statements has no constructor
+        assert_eq!(js("Hewan(x) {\n}"), "class Hewan {\n}\n");
+        // a derived one always has, since it has to call the parent's
+        assert_eq!(
+            js("Kucing(nama) turunan Hewan(nama) {\n}"),
+            "class Kucing extends Hewan {\n  constructor(nama) {\n    super(nama);\n  }\n}\n"
+        );
+        assert_eq!(
+            js("A() turunan B() {\n}"),
+            "class A extends B {\n  constructor() {\n    super();\n  }\n}\n"
+        );
+        // `..nama` is the parent's version
+        assert_eq!(
+            js("Kucing() turunan Hewan() {\nsuara() {\nhasilkan ..suara() + \"!\"\n}\n}"),
+            "class Kucing extends Hewan {\n  constructor() {\n    super();\n  }\n  suara() {\n    return super.suara() + \"!\";\n  }\n}\n"
+        );
         // inside a block the class is indented with it
         assert_eq!(
-            js("jika benar {\nkelas A {\nm() {\n}\n}\n}"),
-            "if (true) {\n  class A {\n    m() {\n    }\n  }\n}\n"
+            js("jika benar {\nHewan() {\nm() {\n}\n}\n}"),
+            "if (true) {\n  class Hewan {\n    m() {\n    }\n  }\n}\n"
+        );
+        // `.nama` is this.nama everywhere in a class, also in callbacks and texts
+        assert_eq!(
+            js("Hewan() {\nm() {\nxs.peta(fungsi (x) {\nhasilkan x + .base\n})\ntulis(\"{.nama}\")\n}\n}"),
+            "class Hewan {\n  m() {\n    xs.map((x) => {\n      return x + this.base;\n    });\n    console.log(`${this.nama}`);\n  }\n}\n"
+        );
+    }
+
+    #[test]
+    fn a_block_can_make_a_value() {
+        assert_eq!(
+            js("Hewan(nama) {\n  .nama = { misal x = 5; hasilkan nama + x }\n}"),
+            "class Hewan {
+  constructor(nama) {
+    this.nama = (() => {
+      let x = 5;
+      return nama + x;
+    })();
+  }
+}
+"
+        );
+        assert_eq!(
+            js("misal v = {\n  misal a = 1\n  hasilkan a + 1\n}"),
+            "let v = (() => {\n  let a = 1;\n  return a + 1;\n})();\n"
+        );
+        // a block that waits makes the function around it async
+        assert_eq!(
+            js("fungsi f() {\nmisal v = { hasilkan tunggu g() }\n}"),
+            "async function f() {\n  let v = await (async () => {\n    return await g();\n  })();\n}\n"
+        );
+        assert_eq!(
+            js("misal v = 1 + { hasilkan tunggu g() }\n"),
+            "let v = 1 + await (async () => {\n  return await g();\n})();\n"
+        );
+        // an object stays an object
+        assert_eq!(js("misal o = { a: 1 }"), "let o = { a: 1 };\n");
+        // a statement that starts with a block expression is an ordinary block
+        assert_eq!(js("{\nlanjut\n}"), "{\n  continue;\n}\n");
+    }
+
+    #[test]
+    fn semicolons_are_optional() {
+        assert_eq!(
+            js("misal x = 1\ntulis(x)\njika x {\nberhenti\n}"),
+            "let x = 1;\nconsole.log(x);\nif (x) {\n  break;\n}\n"
+        );
+        assert_eq!(js("misal x = 1; tulis(x);"), "let x = 1;\nconsole.log(x);\n");
+    }
+
+    #[test]
+    fn capital_letters_build_objects() {
+        assert_eq!(js("x = hewan(1);"), "x = hewan(1);\n");
+        assert_eq!(js("x = Hewan(1);"), "x = new Hewan(1);\n");
+        assert_eq!(js("x = Date();"), "x = new Date();\n");
+        assert_eq!(js("x = Math.max(1, 2);"), "x = Math.max(1, 2);\n");
+        assert_eq!(
+            js("Masalah(pesan) turunan Galat(pesan) {\n}"),
+            "class Masalah extends Error {\n  constructor(pesan) {\n    super(pesan);\n  }\n}\n"
+        );
+    }
+
+    #[test]
+    fn tunggu_inside_a_template_makes_the_function_async() {
+        assert_eq!(
+            js("fungsi f() {\ntulis(\"{tunggu g()}\");\n}"),
+            "async function f() {\n  console.log(`${await g()}`);\n}\n"
         );
     }
 
     #[test]
     fn new_with_member_callee() {
-        assert_eq!(js("x = baru a.B(1, 2).c;"), "x = new a.B(1, 2).c;\n");
+        assert_eq!(js("x = a.B(1, 2).c;"), "x = new a.B(1, 2).c;\n");
     }
 
     #[test]
@@ -355,7 +440,7 @@ let k = new Kucing(\"Tom\");
         let t = transpile("xs.peta(fungsi (x) {\ntulis(x);\n});\ntulis(\"a {x}\");");
         assert_eq!(
             t.js,
-            "xs.map(function (x) {\n  console.log(x);\n});\nconsole.log(`a ${x}`);\n"
+            "xs.map((x) => {\n  console.log(x);\n});\nconsole.log(`a ${x}`);\n"
         );
         assert_eq!(t.call_sites, vec![(2, 2), (4, 4)]);
     }

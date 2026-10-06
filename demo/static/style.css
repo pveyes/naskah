@@ -14,6 +14,7 @@
   --tok-number: #1f5e6b;
   --tok-string: #4f6b2a;
   --tok-function: #8a5a00;
+  --tok-class: #6b4a9e;
   --tok-operator: #9a8466;
   --tok-comment: #8d7a60;
 
@@ -37,6 +38,7 @@
     --tok-number: #7fc2ce;
     --tok-string: #a9c77a;
     --tok-function: #e6b65c;
+    --tok-class: #c79bff;
     --tok-operator: #8f7c64;
     --tok-comment: #8f7c64;
   }
@@ -227,6 +229,7 @@ a {
 .tok-number { color: var(--tok-number); }
 .tok-string { color: var(--tok-string); }
 .tok-function { color: var(--tok-function); }
+.tok-class { color: var(--tok-class); }
 .tok-operator { color: var(--tok-operator); }
 .tok-comment { color: var(--tok-comment); font-style: italic; }
 

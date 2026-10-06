@@ -122,6 +122,7 @@ fn precedence(e: &Expression) -> u8 {
         Expression::Assignment(_) => PREC_ASSIGNMENT,
         Expression::BinaryExpression(b) => operator_precedence(&b.operator),
         Expression::UnaryExpression(_) | Expression::Await(_) => PREC_UNARY,
+        Expression::Block(b) if b.is_async => PREC_UNARY,
         _ => PREC_ATOM,
     }
 }
@@ -260,15 +261,27 @@ fn print_params(params: Vec<Identifier>) -> String {
 }
 
 /// A function value's body is printed with no indentation; `expr_at` lines it
-/// up with the statement it ends up in.
+/// up with the statement it ends up in. It is an arrow function so that `.nama`
+/// (`this`) still means the same object inside it.
 fn print_function_expression(f: Box<FunctionExpression>) -> String {
     let f = *f;
     format!(
-        "{}function ({}) {}",
+        "{}({}) => {}",
         if f.is_async { "async " } else { "" },
         print_params(f.params),
         print_block_statement(f.body, 0)
     )
+}
+
+/// `{ ...; hasilkan x }` is an arrow function that is called right away.
+fn print_block_expression(b: Box<BlockExpression>) -> String {
+    let b = *b;
+    let body = print_block_statement(b.body, 0);
+    if b.is_async {
+        format!("await (async () => {})()", body)
+    } else {
+        format!("(() => {})()", body)
+    }
 }
 
 /// Text as it appears inside a JS template literal.
@@ -359,6 +372,7 @@ fn print_expression(e: Expression) -> String {
         Expression::Object(properties) => print_object(properties),
         Expression::Template(parts) => print_template(parts),
         Expression::Function(f) => print_function_expression(f),
+        Expression::Block(b) => print_block_expression(b),
         Expression::New(n) => print_new_expression(n),
         Expression::Await(a) => print_await_expression(a),
         Expression::This => String::from("this"),
@@ -553,17 +567,29 @@ fn print_class_declaration(c: ClassDeclaration, depth: u8) -> String {
     let inner = insert_indent(depth + 1);
     let mut res = insert_indent(depth);
     res.push_str(&format!("class {}", c.id.name));
+    let mut body = c.body;
     if let Some(parent) = c.parent {
-        res.push_str(&format!(" extends {}", parent.name));
+        res.push_str(&format!(" extends {}", builtin_value(&parent.id.name)));
+        // `turunan Hewan(nama)` is the call to the parent's constructor, and comes first
+        body.insert(
+            0,
+            Statement::Expression(Expression::CallExpression(CallExpression {
+                callee: Box::new(Expression::Identifier(Identifier { name: String::from("super") })),
+                arguments: parent.arguments,
+                line: 0,
+            })),
+        );
     }
     res.push_str(" {\n");
 
-    if let Some(ctor) = c.constructor {
+    // the statements in the body are the constructor
+    if !body.is_empty() {
+        let constructor = BlockStatement { body: Some(body) };
         res.push_str(&format!(
             "{}constructor({}) {}\n",
             inner,
-            print_params(ctor.params),
-            print_block_statement(ctor.body, depth + 1)
+            print_params(c.params),
+            print_block_statement(constructor, depth + 1)
         ));
     }
     for m in c.methods {
