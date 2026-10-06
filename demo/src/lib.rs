@@ -26,9 +26,9 @@ enum Msg {
 const EXAMPLE_CODE: &str = "// Hitung faktorial
 fungsi faktorial(n) {
   jika n <= 1 {
-    kembali 1;
+    hasilkan 1;
   }
-  kembali n * faktorial(n - 1);
+  hasilkan n * faktorial(n - 1);
 }
 
 misal hasil = faktorial(5);

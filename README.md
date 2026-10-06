@@ -75,7 +75,7 @@ ulang {
 
 ```
 fungsi jumlah(a, b) {
-  kembali a + b;
+  hasilkan a + b;
 }
 
 tulis(jumlah(1, 2));

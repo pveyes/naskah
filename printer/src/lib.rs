@@ -44,7 +44,7 @@ mod test {
     #[test]
     fn functions_and_loops() {
         assert_eq!(
-            js("fungsi jumlah(a, b) {\nkembali a + b;\n}\nselama benar {\nberhenti;\n}\n"),
+            js("fungsi jumlah(a, b) {\nhasilkan a + b;\n}\nselama benar {\nberhenti;\n}\n"),
             "function jumlah(a, b) {\n  return a + b;\n}\nwhile (true) {\n  break;\n}\n"
         );
     }

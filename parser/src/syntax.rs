@@ -5,7 +5,7 @@ type Result<T> = std::result::Result<T, ParseError>;
 
 const RESERVED: [&str; 16] = [
     "misal", "konstan", "jika", "lain", "selama", "ulang", "berhenti", "lanjut", "fungsi",
-    "kembali", "benar", "salah", "kosong", "dan", "atau", "bukan",
+    "hasilkan", "benar", "salah", "kosong", "dan", "atau", "bukan",
 ];
 
 struct Parser {
@@ -176,7 +176,7 @@ impl Parser {
             return Ok(Statement::Continue);
         }
 
-        if self.eat_word("kembali") {
+        if self.eat_word("hasilkan") {
             let value = if self.is_punct(";") { None } else { Some(self.expression()?) };
             self.expect_punct(";")?;
             return Ok(Statement::Return(value));
@@ -621,7 +621,7 @@ mod test {
     #[test]
     fn functions() {
         assert_eq!(
-            ok("fungsi jumlah(a, b) {\n kembali a + b;\n}"),
+            ok("fungsi jumlah(a, b) {\n hasilkan a + b;\n}"),
             vec![Statement::FunctionDeclaration(FunctionDeclaration {
                 id: id("jumlah"),
                 params: vec![id("a"), id("b")],
@@ -635,7 +635,7 @@ mod test {
             })]
         );
         assert_eq!(
-            ok("fungsi diam() { kembali; }"),
+            ok("fungsi diam() { hasilkan; }"),
             vec![Statement::FunctionDeclaration(FunctionDeclaration {
                 id: id("diam"),
                 params: vec![],
