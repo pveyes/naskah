@@ -163,6 +163,18 @@ mod test {
     }
 
     #[test]
+    fn school_symbols_multiply_and_divide() {
+        assert_eq!(js("x = 6 × 7;"), "x = 6 * 7;\n");
+        assert_eq!(js("x = 10 ÷ 4 + 1;"), "x = 10 / 4 + 1;\n");
+        assert_eq!(js("x = 1 + 2 × 3;"), "x = 1 + 2 * 3;\n");
+        // `/` after `saat` means "atau", but `÷` is always a division
+        assert_eq!(
+            js("pilih x {\nsaat 8 ÷ 2 tulis(\"a\")\n}"),
+            js("pilih x {\nsaat (8 / 2) tulis(\"a\")\n}")
+        );
+    }
+
+    #[test]
     fn parentheses_follow_precedence() {
         assert_eq!(js("x = 1 + 2 * 3;"), "x = 1 + 2 * 3;\n");
         assert_eq!(js("x = (1 + 2) * 3;"), "x = (1 + 2) * 3;\n");

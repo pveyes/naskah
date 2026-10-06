@@ -30,6 +30,7 @@ Dari yang paling lemah ke paling kuat:
 | `>` `<` `>=` `<=` | perbandingan |
 | `+` `-` | tambah, kurang |
 | `*` `/` `%` | kali, bagi, sisa bagi |
+| `×` `÷` | kali, bagi (tanda dari buku sekolah, sama dengan `*` dan `/`) |
 | `-x` | negatif |
 | `^` | pangkat |
 | `a.b` `a[0]` `f(x)` | properti, elemen, panggil fungsi |
@@ -131,7 +132,7 @@ pilih x {
 }
 ```
 
-Beberapa nilai dalam satu `saat` dipisah dengan `/`, dibaca "atau". Untuk pembagian di sana, pakai kurung: `saat (a / 2) {`.
+Beberapa nilai dalam satu `saat` dipisah dengan `/`, dibaca "atau". Untuk pembagian di sana, pakai kurung (`saat (a / 2) {`) atau tulis `÷`.
 
 Kalau isi sebuah `saat` (atau `lain`) hanya satu pernyataan, kurung kurawal boleh dilewatkan, asal pernyataan itu ditulis di baris yang sama:
 

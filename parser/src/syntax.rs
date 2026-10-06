@@ -855,9 +855,10 @@ impl Parser {
     fn multiplicative(&mut self) -> Result<Expression> {
         let mut left = self.unary()?;
         loop {
-            let op = if self.eat_op("*") {
+            // `×` and `÷` are the school symbols for `*` and `/`; `÷` is never the "atau" of `saat`
+            let op = if self.eat_op("*") || self.eat_op("×") {
                 Operator::Multiplication
-            } else if self.or_slash != Some(self.nesting) && self.eat_op("/") {
+            } else if (self.or_slash != Some(self.nesting) && self.eat_op("/")) || self.eat_op("÷") {
                 Operator::Division
             } else if self.eat_op("%") {
                 Operator::Remainder

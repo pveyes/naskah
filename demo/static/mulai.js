@@ -2,4 +2,6 @@
 // the Vite dev server cannot resolve relative imports from an inline module script.
 import init from "./assets/wasm.js";
 
+import "./operator.js";
+
 init();
