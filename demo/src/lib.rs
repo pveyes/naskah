@@ -1,3 +1,5 @@
+#![recursion_limit = "256"]
+
 extern crate printer;
 extern crate wasm_bindgen;
 extern crate web_sys;
@@ -7,6 +9,9 @@ use wasm_bindgen::prelude::*;
 use yew::prelude::*;
 
 use printer::to_js;
+
+mod highlight;
+use highlight::{tokenize, Kind, Lang};
 
 struct Model {
     link: ComponentLink<Self>,
@@ -25,6 +30,17 @@ jika y benar {
   menang();
 }
 ";
+
+fn highlighted(lang: Lang, src: &str) -> Html {
+    html! {
+        <>
+            { for tokenize(lang, src).into_iter().map(|(kind, text)| match kind {
+                Kind::Plain => html! { {text} },
+                _ => html! { <span class=kind.class()>{text}</span> },
+            }) }
+        </>
+    }
+}
 
 impl Component for Model {
     type Message = Msg;
@@ -59,11 +75,14 @@ impl Component for Model {
             <>
                 <div>
                     <label for="input",>{"Masukan"}</label>
-                    <textarea value={&self.code} oninput={self.link.callback(|e: InputData| Msg::ChangeCode(e.value))} />
+                    <div class="editor">
+                        <pre class="backdrop" aria-hidden="true">{highlighted(Lang::Naskah, &self.code)}{"\n"}</pre>
+                        <textarea spellcheck="false" value={&self.code} oninput={self.link.callback(|e: InputData| Msg::ChangeCode(e.value))} />
+                    </div>
                 </div>
                 <div>
                     <label>{"Keluaran (JavaScript):"}</label>
-                    <pre id="js",>{&self.transpiled}</pre>
+                    <pre id="js",>{highlighted(Lang::JavaScript, &self.transpiled)}</pre>
                 </div>
             </>
         }

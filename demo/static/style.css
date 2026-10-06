@@ -55,13 +55,6 @@ header h1 {
   margin-bottom: 20px;
 }
 
-textarea {
-  border: none;
-  outline: none;
-  display: block;
-  width: 100%;
-}
-
 textarea, pre {
   margin: 0;
   font-family: 'Courier New', Courier, monospace;
@@ -74,6 +67,46 @@ textarea, pre {
   border-radius: 3px;
   box-sizing: border-box;
 }
+
+/* Editor: transparent textarea stacked over a highlighted copy of its text */
+.editor {
+  position: relative;
+}
+
+.editor .backdrop {
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+}
+
+.editor textarea {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  resize: none;
+  overflow: hidden;
+  outline: none;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+  background: transparent;
+  color: transparent;
+  caret-color: #24292f;
+}
+
+.editor textarea:focus {
+  border-color: #aaa;
+}
+
+#js {
+  white-space: pre-wrap;
+}
+
+.tok-keyword { color: #cf222e; }
+.tok-literal { color: #0550ae; }
+.tok-number { color: #0550ae; }
+.tok-string { color: #0a3069; }
+.tok-function { color: #8250df; }
+.tok-operator { color: #6e7781; }
 
 @media (max-width: 768px) {
   .github-corner {
