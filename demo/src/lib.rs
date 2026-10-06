@@ -73,16 +73,16 @@ impl Component for Model {
     fn view(&self) -> Html {
         html! {
             <>
-                <div>
-                    <label for="input",>{"Masukan"}</label>
+                <div class="pane">
+                    <label class="pane-title" for="input">{"Naskah"}</label>
                     <div class="editor">
                         <pre class="backdrop" aria-hidden="true">{highlighted(Lang::Naskah, &self.code)}{"\n"}</pre>
-                        <textarea spellcheck="false" value={&self.code} oninput={self.link.callback(|e: InputData| Msg::ChangeCode(e.value))} />
+                        <textarea id="input" spellcheck="false" value={&self.code} oninput={self.link.callback(|e: InputData| Msg::ChangeCode(e.value))} />
                     </div>
                 </div>
-                <div>
-                    <label>{"Keluaran (JavaScript):"}</label>
-                    <pre id="js",>{highlighted(Lang::JavaScript, &self.transpiled)}</pre>
+                <div class="pane">
+                    <span class="pane-title">{"JavaScript"}</span>
+                    <pre class="output" id="js" aria-live="polite">{highlighted(Lang::JavaScript, &self.transpiled)}</pre>
                 </div>
             </>
         }
